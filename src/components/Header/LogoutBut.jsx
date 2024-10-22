@@ -4,6 +4,7 @@ import authService from "../../appwrite/auth";
 import { logout } from "../../store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { FaSignOutAlt } from "react-icons/fa"; // Importing logout icon
+import { clearPosts } from "../../store/postsSlice";
 
 function LogoutBut() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function LogoutBut() {
       .logout()
       .then(() => {
         dispatch(logout());
+        dispatch(clearPosts()); // Clear posts on logout
         navigate("/"); // Navigate to home after logout
         window.location.reload(); // Refresh the page
       })

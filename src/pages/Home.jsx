@@ -1,45 +1,53 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useDispatch, useSelector } from "react-redux";
+import { setPosts } from "../store/postsSlice";
 import appwriteService from "../appwrite/config";
 import { Container, PostCard } from "../components";
-import Masonry from "react-masonry-css"; // Import Masonry component
+import Masonry from "react-masonry-css";
 
 function Home() {
-  const [posts, setPosts] = useState([]);
+  const dispatch = useDispatch();
+  const posts = useSelector((state) => state.posts.posts);
+  const authStatus = useSelector((state) => state.auth.status);
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
-  const [dataLoaded, setDataLoaded] = useState(false); // Track if data is loaded
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
-    // Fetch posts from Appwrite service
-    appwriteService.getPosts().then((posts) => {
-      if (posts) {
-        setPosts(posts.documents);
-        setDataLoaded(true); // Mark data as loaded
+    const fetchPosts = async () => {
+      const response = await appwriteService.getPosts();
+      if (response) {
+        const sortedPosts = response.documents.reverse();
+        dispatch(setPosts(sortedPosts));
+        setDataLoaded(true);
       }
-    });
+    };
 
-    // Timer to control welcome message display
+    if (authStatus) {
+      fetchPosts();
+    } else {
+      setDataLoaded(true); // Mark data as loaded even if user is not authenticated
+    }
+
     const timer = setTimeout(() => {
-      setShouldAnimate(true);
+      if (authStatus) {
+        setShouldAnimate(true);
+        setShowWelcome(false); // Hide welcome only if authenticated
+      }
     }, 2000);
 
-    return () => clearTimeout(timer); // Cleanup timer on unmount
-  }, []);
+    return () => clearTimeout(timer);
+  }, [dispatch, authStatus]);
 
   useEffect(() => {
     if (dataLoaded && shouldAnimate) {
-      setShowWelcome(false); // Hide welcome message only when data is loaded and timer is done
+      setShowWelcome(false);
     }
   }, [dataLoaded, shouldAnimate]);
 
-  const postVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
-
   const welcomeVariants = {
-    hidden: { opacity: 0, y: -20 }, // Animate from above
+    hidden: { opacity: 0, y: -20 },
     visible: { opacity: 1, y: 0 },
   };
 
@@ -80,24 +88,26 @@ function Home() {
             </div>
           </motion.div>
         ) : (
-          <Masonry
-            breakpointCols={{ default: 4, 1100: 3, 700: 2, 500: 1 }}
-            className="flex py-4" // Use flex to keep the layout responsive
-            columnClassName="masonry-grid-column" // Optional: Add your own styles for columns
-          >
-            {posts.map((post, index) => (
-              <motion.div
-                key={post.$id}
-                className="p-2" // Adjust padding as needed
-                initial="hidden"
-                animate={shouldAnimate ? "visible" : "hidden"}
-                variants={postVariants}
-                transition={{ duration: 0.7, delay: index * 0.15 }}
-              >
-                <PostCard {...post} />
-              </motion.div>
-            ))}
-          </Masonry>
+          authStatus &&
+          dataLoaded && ( // Ensure that posts are shown only if user is authenticated and data is loaded
+            <Masonry
+              breakpointCols={{ default: 4, 1100: 3, 700: 2, 500: 1 }}
+              className="flex py-4"
+              columnClassName="masonry-grid-column"
+            >
+              {posts.map((post, index) => (
+                <motion.div
+                  key={post.$id}
+                  className="p-2"
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ duration: 0.7, delay: index * 0.15 }}
+                >
+                  <PostCard {...post} />
+                </motion.div>
+              ))}
+            </Masonry>
+          )
         )}
       </Container>
     </div>

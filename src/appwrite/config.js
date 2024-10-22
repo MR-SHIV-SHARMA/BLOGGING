@@ -14,13 +14,12 @@ export class Service {
     this.bucket = new Storage(this.client);
   }
 
-  async createPost({ title, content, slug, featuredImage, status, userId }) {
+  async createPost({ title, content, featuredImage, status, userId }) {
     try {
       return await this.databases.createDocument(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
-        // ID.unique(),
-        slug,
+        ID.unique(), // Use ID.unique() instead of slug
         {
           title,
           content,
@@ -34,12 +33,12 @@ export class Service {
     }
   }
 
-  async updatePost(slug, { title, content, featuredImage, status }) {
+  async updatePost(id, { title, content, featuredImage, status }) {
     try {
       return await this.databases.updateDocument(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
-        slug,
+        id, // Use id instead of slug
         {
           title,
           content,
@@ -105,7 +104,7 @@ export class Service {
       );
     } catch (error) {
       throw error;
-    } 
+    }
   }
 
   async deleteFile(fileId) {

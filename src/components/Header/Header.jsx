@@ -1,8 +1,7 @@
 import React from "react";
 import { Container, Logo, LogoutBut } from "../index.js";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaHome,
   FaSignInAlt,
@@ -44,6 +43,12 @@ function Header() {
       name: "Add Post",
       slug: "/add-post",
       icon: <FaPlusCircle size={24} />,
+      active: authStatus,
+    },
+    {
+      name: "My Posts",
+      slug: "/user-posts",
+      icon: <FaListAlt size={24} />,
       active: authStatus,
     },
   ];
