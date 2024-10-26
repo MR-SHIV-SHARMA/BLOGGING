@@ -16,10 +16,10 @@ export class Service {
 
   async createPost({ title, content, featuredImage, status, userId }) {
     try {
-      return await this.databases.createDocument(
+      const post = await this.databases.createDocument(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
-        ID.unique(), // Use ID.unique() instead of slug
+        ID.unique(),
         {
           title,
           content,
@@ -28,6 +28,11 @@ export class Service {
           userId,
         }
       );
+      // Return the post including the created timestamp
+      return {
+        ...post,
+        created: post.$createdAt,
+      };
     } catch (error) {
       throw error;
     }
@@ -35,10 +40,10 @@ export class Service {
 
   async updatePost(id, { title, content, featuredImage, status }) {
     try {
-      return await this.databases.updateDocument(
+      const updatedPost = await this.databases.updateDocument(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
-        id, // Use id instead of slug
+        id,
         {
           title,
           content,
@@ -46,17 +51,22 @@ export class Service {
           status,
         }
       );
+      // Return the updated post including updated timestamp
+      return {
+        ...updatedPost,
+        updated: updatedPost.$updatedAt,
+      };
     } catch (error) {
       throw error;
     }
   }
 
-  async deletePost(slug) {
+  async deletePost(id) {
     try {
       await this.databases.deleteDocument(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
-        slug
+        id
       );
       return true;
     } catch (error) {
@@ -65,14 +75,19 @@ export class Service {
     }
   }
 
-  async getPost(slug) {
+  async getPost(id) {
     try {
-      return await this.databases.getDocument(
+      const post = await this.databases.getDocument(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
-        slug
+        id
       );
-      return true;
+      // Return the post including created and updated timestamps
+      return {
+        ...post,
+        created: post.$createdAt,
+        updated: post.$updatedAt,
+      };
     } catch (error) {
       throw error;
       return false;
@@ -81,19 +96,27 @@ export class Service {
 
   async getPosts(queries = [Query.equal("status", "active")]) {
     try {
-      return await this.databases.listDocuments(
+      const response = await this.databases.listDocuments(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
         queries
       );
-      return true;
+      // Return all posts with created and updated timestamps
+      const posts = response.documents.map((post) => ({
+        ...post,
+        created: post.$createdAt,
+        updated: post.$updatedAt,
+      }));
+      return {
+        documents: posts,
+      };
     } catch (error) {
       throw error;
       return false;
     }
   }
 
-  // file upload service
+  // File upload service
 
   async uploadFile(file) {
     try {
@@ -109,7 +132,7 @@ export class Service {
 
   async deleteFile(fileId) {
     try {
-      return await this.bucket.deleteFile(conf.appwriteBucketId, fileId);
+      await this.bucket.deleteFile(conf.appwriteBucketId, fileId);
       return true;
     } catch (error) {
       throw error;

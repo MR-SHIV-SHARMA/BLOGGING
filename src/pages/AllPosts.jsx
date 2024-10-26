@@ -12,9 +12,15 @@ function AllPosts() {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const response = await appwriteService.getPosts();
+      const response = await appwriteService.getPosts([]);
       if (response) {
-        dispatch(setPosts(response.documents.reverse()));
+        // Sort by updated timestamp or fallback to created timestamp (descending order)
+        const sortedPosts = response.documents.sort((a, b) => {
+          const dateA = new Date(a.$updatedAt || a.$createdAt); // Use updated date, fallback to created date
+          const dateB = new Date(b.$updatedAt || b.$createdAt);
+          return dateB - dateA; // Sort in descending order (most recent first)
+        });
+        dispatch(setPosts(sortedPosts)); // Dispatch sorted posts to the store
       }
     };
 
@@ -22,22 +28,23 @@ function AllPosts() {
   }, [dispatch]);
 
   return (
-    <div className="py-8 w-full bg-gray-100">
+    <div className="py-8 w-full bg-gradient-to-r from-blue-100 to-purple-100"> {/* Background Gradient */}
       <Container>
         <Masonry
-          breakpointCols={{ default: 4, 1100: 3, 700: 2, 500: 1 }}
-          className="flex py-4" // Use flex to keep the layout responsive
+          breakpointCols={{ default: 4, 1100: 3, 700: 2, 500: 1 }} // Responsive columns
+          className="flex py-4" // Keep the layout responsive
           columnClassName="masonry-grid-column" // Optional: Add your own styles for columns
         >
           {posts.map((post, index) => (
             <motion.div
               key={post.$id}
-              className="p-2" // Adjust padding as needed
+              className="p-2" // Keep padding as needed
               initial="hidden"
               animate="visible"
               transition={{ duration: 0.7, delay: index * 0.15 }}
             >
-              <PostCard {...post} />
+              <PostCard {...post} className="shadow-lg transition-shadow hover:shadow-xl rounded-lg bg-white p-4"> {/* Added styles for PostCard */}
+              </PostCard>
             </motion.div>
           ))}
         </Masonry>

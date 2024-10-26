@@ -1,7 +1,23 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+const getPostsFromLocalStorage = () => {
+  const posts = localStorage.getItem("posts");
+
+  // Check if posts is not null or undefined
+  if (posts === null || posts === undefined) {
+    return []; // Return an empty array if there's no valid entry
+  }
+
+  try {
+    return JSON.parse(posts); // Attempt to parse the valid JSON
+  } catch (error) {
+    console.error("Error parsing posts from localStorage:", error);
+    return []; // Return an empty array in case of JSON parsing error
+  }
+};
+
 const initialState = {
-  posts: JSON.parse(localStorage.getItem("posts")) || [],
+  posts: getPostsFromLocalStorage(),
 };
 
 const postsSlice = createSlice({

@@ -18,7 +18,12 @@ function Home() {
     const fetchPosts = async () => {
       const response = await appwriteService.getPosts();
       if (response) {
-        const sortedPosts = response.documents.reverse();
+        // Sort by updated timestamp or fallback to created timestamp in descending order
+        const sortedPosts = response.documents.sort((a, b) => {
+          const dateA = new Date(a.$updatedAt || a.$createdAt); // Use updated date or fallback to created date
+          const dateB = new Date(b.$updatedAt || b.$createdAt);
+          return dateB - dateA; // Sort in descending order (most recent first)
+        });
         dispatch(setPosts(sortedPosts));
         setDataLoaded(true);
       }
