@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import authService from "../../appwrite/auth";
 import { logout } from "../../store/authSlice";
 import { useNavigate } from "react-router-dom";
-import { FaSignOutAlt } from "react-icons/fa"; // Importing logout icon
+import { FaSignOutAlt } from "react-icons/fa";
 import { clearPosts } from "../../store/postsSlice";
 
 function LogoutBut() {
@@ -15,9 +15,9 @@ function LogoutBut() {
       .logout()
       .then(() => {
         dispatch(logout());
-        dispatch(clearPosts()); // Clear posts on logout
-        navigate("/"); // Navigate to home after logout
-        window.location.reload(); // Refresh the page
+        dispatch(clearPosts());
+        navigate("/");
+        window.location.reload();
       })
       .catch((error) => {
         console.log(error);
@@ -26,16 +26,18 @@ function LogoutBut() {
 
   return (
     <button
-      className="inline-flex items-center space-x-2 px-3 sm:px-6 py-2 text-sm sm:text-lg font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-full duration-200"
+      className="inline-flex items-center justify-center gap-2 px-5 py-3 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-blue-700 to-blue-400 hover:from-blue-500 hover:to-blue-300 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out"
       onClick={logoutHandler}
     >
-      {/* Show icon on mobile, hide name */}
-      <span className="block md:hidden">
-        <FaSignOutAlt size={24} />
+      <span className="flex items-center gap-2">
+        {/* Animated Icon */}
+        <FaSignOutAlt
+          size={20}
+          className="transition-transform duration-300 ease-in-out transform hover:rotate-180"
+        />
+        {/* Text */}
+        <span className="hidden md:inline">Logout</span>
       </span>
-
-      {/* Show "Logout" text on desktop, hide icon */}
-      <span className="hidden md:block">Logout</span>
     </button>
   );
 }

@@ -40,3 +40,33 @@
 .read-the-docs {
   color: #888;
 }
+
+.header {
+  position: relative;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.menu-button {
+  font-size: 1.2rem;
+}
+
+.sidebar-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 66.67%; /* Equivalent to w-2/3 in Tailwind */
+  background-color: #333;
+  color: #fff;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-menu.open {
+  transform: translateX(0);
+}

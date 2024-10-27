@@ -72,7 +72,7 @@ export default function Post() {
               <img
                 src={appwriteService.getFilePreview(post.featuredImage)}
                 alt={post.title}
-                className="w-full object-cover rounded-t-xl transition-transform duration-500 hover:scale-105"
+                className="w-full object-cover rounded-t-xl p-2 transition-transform duration-500 hover:scale-105"
               />
               {isAuthor && (
                 <div className="absolute right-6 top-6 flex space-x-3">
@@ -101,21 +101,21 @@ export default function Post() {
             <div className="space-y-2">
               {sortedRelatedPosts.length > 0 ? (
                 sortedRelatedPosts.map((relatedPost) => (
-                  <div
-                    key={relatedPost.$id}
-                    className="border border-gray-300 rounded-md p-2 flex"
-                  >
-                    <img
-                      src={appwriteService.getFilePreview(
-                        relatedPost.featuredImage
-                      )}
-                      alt={relatedPost.title}
-                      className="w-16 h-16 object-cover rounded-md mr-4" // Left side image
-                    />
-                    <Link to={`/post/${relatedPost.$id}`} className="flex-grow">
+                  <Link to={`/post/${relatedPost.$id}`} className="flex-grow">
+                    <div
+                      key={relatedPost.$id}
+                      className="border border-gray-300 rounded-md p-2 flex"
+                    >
+                      <img
+                        src={appwriteService.getFilePreview(
+                          relatedPost.featuredImage
+                        )}
+                        alt={relatedPost.title}
+                        className="w-16 h-16 object-cover rounded-md mr-4" // Left side image
+                      />
                       <h3 className="font-semibold">{relatedPost.title}</h3>
-                    </Link>
-                  </div>
+                    </div>
+                  </Link>
                 ))
               ) : (
                 <p>No related posts found.</p> // Message if no related posts

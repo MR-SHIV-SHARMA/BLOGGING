@@ -12,7 +12,7 @@ import Signup from "./pages/Signup";
 import EditPost from "./pages/EditPost";
 import Post from "./pages/Post";
 import AllPosts from "./pages/AllPosts";
-import UserPosts from "./pages/UserPosts";
+import UserProfile from "./pages/UserProfile";
 
 const router = createBrowserRouter([
   {
@@ -71,10 +71,10 @@ const router = createBrowserRouter([
         element: <Post />,
       },
       {
-        path: "/user-posts",
+        path: "/user-profile",
         element: (
           <AuthLayout authentication>
-            <UserPosts />
+            <UserProfile />,
           </AuthLayout>
         ),
       },
