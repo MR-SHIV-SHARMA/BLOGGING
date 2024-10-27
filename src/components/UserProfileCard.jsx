@@ -42,8 +42,6 @@ function UserProfileCard({ profile: initialProfile }) {
   }, [userData]);
 
   const renderPosts = () => {
-    console.log("renderPosts - activeTab:", activeTab);
-
     // Categorize posts into active and inactive based on a status property
     const activePosts = userPosts.filter((post) => post.status === "active");
     const inactivePosts = userPosts.filter(
@@ -51,14 +49,12 @@ function UserProfileCard({ profile: initialProfile }) {
     );
 
     // Determine filtered posts based on the activeTab
-    let filteredPosts;
+    let filteredPosts = userPosts;
     if (activeTab === "Allpost") {
       filteredPosts = [...activePosts, ...inactivePosts];
     } else {
       filteredPosts = activeTab === "activePosts" ? activePosts : inactivePosts;
     }
-
-    console.log("Filtered Posts:", filteredPosts); // Check filtered posts
 
     if (!filteredPosts || filteredPosts.length === 0) {
       return <p className="text-center text-gray-500">No posts available</p>;
@@ -197,7 +193,7 @@ function UserProfileCard({ profile: initialProfile }) {
         </div>
       </div>
 
-      <div className="mt-6 border-t border-gray-200">
+      <div className="mt-6 border-t border-gray-500">
         <div className="flex justify-around mt-4">
           <button
             onClick={() => setActiveTab("Allpost")}

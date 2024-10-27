@@ -20,6 +20,9 @@ function Header() {
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
+  // Determine the active page based on the current URL path
+  const currentPath = window.location.pathname;
+
   return (
     <header className="py-1 shadow bg-gray-300">
       <Container>
@@ -44,7 +47,11 @@ function Header() {
                   <li key={item.name}>
                     <button
                       onClick={() => navigate(item.slug)}
-                      className="text-lg font-semibold hover:text-blue-300"
+                      className={`text-lg font-semibold px-3 py-2 rounded-md ${
+                        currentPath === item.slug
+                          ? "bg-blue-500 text-white" // Active page styling
+                          : "hover:text-blue-300 hover:bg-gray-700"
+                      }`}
                     >
                       {item.name}
                     </button>
@@ -76,16 +83,24 @@ function Header() {
               {navItems.map(
                 (item) =>
                   item.active && (
-                    <li key={item.name}>
-                      <button
-                        onClick={() => {
-                          navigate(item.slug);
-                          toggleMenu();
-                        }}
-                        className="text-lg font-semibold hover:text-blue-300"
-                      >
-                        {item.name}
-                      </button>
+                    <li key={item.name} className="w-full">
+                      <div className="flex flex-col w-full">
+                        <button
+                          onClick={() => {
+                            navigate(item.slug);
+                            toggleMenu();
+                          }}
+                          className={`text-lg font-semibold px-4 py-2 w-full text-left ${
+                            currentPath === item.slug
+                              ? "bg-blue-500 text-white" // Active page styling
+                              : "hover:text-blue-300 hover:bg-gray-600"
+                          }`}
+                        >
+                          {item.name}
+                        </button>
+                        <div className="border-t-2 border-blue-500 w-full"></div>{" "}
+                        {/* Full-width line */}
+                      </div>
                     </li>
                   )
               )}
@@ -94,7 +109,8 @@ function Header() {
             {/* Decorative Line and Logout Button in Sidebar */}
             {authStatus && (
               <div className="absolute bottom-6 w-full px-6">
-                <div className="border-t-2 border-blue-500 mx-auto w-3/4"></div>
+                <div className="border-t-2 border-blue-500 w-full"></div>{" "}
+                {/* Full-width line */}
                 <div className="mt-4 text-center">
                   <LogoutBut />
                 </div>

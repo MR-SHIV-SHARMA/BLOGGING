@@ -16,14 +16,8 @@ function UserProfile() {
   }, [userData]);
 
   return (
-    <div className="bg-gray-100">
-      {profile ? (
-        <div className="">
-          <UserProfileCard profile={profile} />
-        </div>
-      ) : (
-        <p>Loading...</p>
-      )}
+    <div>
+      {profile ? <UserProfileCard profile={profile} /> : <p>Loading...</p>}
     </div>
   );
 }
