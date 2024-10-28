@@ -210,24 +210,26 @@ function UserProfileCard(
                 <div>
                   <p className="text-sm text-gray-500">
                     {isUpdated
-                      ? `Updated on: ${formatDate($updatedAt)}`
-                      : `Posted on: ${formatDate($createdAt)}`}
+                      ? `Updated on: ${formatDate(post.$updatedAt)}` // post.$updatedAt ko use kiya
+                      : `Posted on: ${formatDate(post.$createdAt)}`}
                   </p>
-                  <p className="text-sm text-gray-600">by {name || userId}</p>
+                  <p className="text-sm text-gray-600">
+                    by {post.name || post.userId}
+                  </p>
                 </div>
                 <button
-                  className="text-white px-2 rounded-md flex items-center"
+                  className="text-white px-2 rounded-md flex items-center bg-slate-900"
                   onClick={(event) => handleSave(event, post)} // Pass the specific post
-                  style={{
-                    backgroundColor: isSaved ? "green" : "blue",
-                  }}
+                  // style={{
+                  //   backgroundColor: isSaved ? "green" : "blue",
+                  // }}
                 >
                   {isSaved ? (
                     <BookmarkBorderIcon style={{ color: "white" }} /> // Outline icon for unsaved
                   ) : (
                     <BookmarkIcon style={{ color: "white" }} /> // Filled icon for saved
                   )}
-                  <span>{isSaved ? "Save" : "Saved"}</span>
+                  {/* <span>{isSaved ? "Save" : "Saved"}</span> */}
                 </button>
               </div>
             </div>
