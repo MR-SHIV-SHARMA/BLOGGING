@@ -5,6 +5,8 @@ import { useDispatch } from "react-redux";
 import { login, logout } from "./store/authSlice";
 import { Outlet } from "react-router-dom";
 import { clearPosts } from "./store/postsSlice";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [loading, setLoading] = React.useState(true);
@@ -43,6 +45,7 @@ function App() {
         </main>
         <Footer />
       </div>
+      <ToastContainer />
     </div>
   ) : null;
 }

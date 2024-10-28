@@ -74,7 +74,7 @@ const router = createBrowserRouter([
         path: "/user-profile",
         element: (
           <AuthLayout authentication>
-            <UserProfile />,
+            <UserProfile />
           </AuthLayout>
         ),
       },

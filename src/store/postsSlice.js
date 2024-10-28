@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+// Function to get posts from localStorage
 const getPostsFromLocalStorage = () => {
   const posts = localStorage.getItem("posts");
 
@@ -16,10 +17,13 @@ const getPostsFromLocalStorage = () => {
   }
 };
 
+// Initialize the initial state
 const initialState = {
   posts: getPostsFromLocalStorage(),
+  savedPosts: JSON.parse(localStorage.getItem("savedPosts")) || [],
 };
 
+// Create the posts slice
 const postsSlice = createSlice({
   name: "posts",
   initialState,
@@ -36,9 +40,28 @@ const postsSlice = createSlice({
       state.posts = [];
       localStorage.removeItem("posts");
     },
+    addSavedPost: (state, action) => {
+      // Check if the post is already saved to avoid duplicates
+      const exists = state.savedPosts.some(
+        (post) => post.$id === action.payload.$id
+      );
+      if (!exists) {
+        state.savedPosts.push(action.payload);
+        localStorage.setItem("savedPosts", JSON.stringify(state.savedPosts));
+      }
+    },
+    removeSavedPost: (state, action) => {
+      state.savedPosts = state.savedPosts.filter(
+        (post) => post.$id !== action.payload
+      );
+      localStorage.setItem("savedPosts", JSON.stringify(state.savedPosts));
+    },
   },
 });
 
-export const { setPosts, addPost, clearPosts } = postsSlice.actions;
+// Export actions
+export const { setPosts, addPost, clearPosts, addSavedPost, removeSavedPost } =
+  postsSlice.actions;
 
+// Export reducer
 export default postsSlice.reducer;

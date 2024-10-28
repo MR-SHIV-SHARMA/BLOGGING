@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { addSavedPost, removeSavedPost } from "../store/postsSlice";
 import UserProfileForm from "../components/UserProfileForm";
 import authService from "../appwrite/auth";
 import parse from "html-react-parser";
 import appwriteService from "../appwrite/config";
 import { Link } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer, toast } from "react-toastify";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder"; // Icon for unsaved
+import BookmarkIcon from "@mui/icons-material/Bookmark"; // Icon for saved
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
@@ -15,11 +20,41 @@ const formatDate = (dateString) => {
   });
 };
 
-function UserProfileCard({ profile: initialProfile }) {
+function UserProfileCard(
+  { profile: initialProfile },
+  { $id, title, featuredImage, $createdAt, $updatedAt, name, userId }
+) {
+  const dispatch = useDispatch();
+  const savedPosts = useSelector((state) => state.posts.savedPosts || []); // Ensure correct state path
+
+  const isUpdated = $updatedAt && new Date($updatedAt) > new Date($createdAt);
+  const isSaved = savedPosts.some((post) => post.$id === $id); // Check if the post is saved
+
+  const handleSave = (event, post) => {
+    event.preventDefault();
+    const isSaved = savedPosts.some((savedPost) => savedPost.$id === post.$id); // Check if the specific post is saved
+    if (isSaved) {
+      dispatch(removeSavedPost(post.$id));
+      toast.info("Post removed from saved items.");
+    } else {
+      const postToSave = {
+        $id: post.$id,
+        title: post.title,
+        featuredImage: post.featuredImage,
+        $createdAt: post.$createdAt,
+        $updatedAt: post.$updatedAt,
+        name: post.name,
+        userId: post.userId,
+      };
+      dispatch(addSavedPost(postToSave));
+      toast.success("Post saved successfully!");
+    }
+  };
+
   const userData = useSelector((state) => state.auth.userData);
   const posts = useSelector((state) => state.posts.posts);
+  // const savedPosts = useSelector((state) => state.posts.savedPosts);
 
-  // Filter posts created by the logged-in user
   const userPosts = posts.filter(
     (post) => post.userId === (userData && userData.$id)
   );
@@ -27,6 +62,8 @@ function UserProfileCard({ profile: initialProfile }) {
   const [activeTab, setActiveTab] = useState("Allpost");
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState(initialProfile);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [mutualFollow, setMutualFollow] = useState(false);
 
   useEffect(() => {
     if (userData) {
@@ -34,26 +71,54 @@ function UserProfileCard({ profile: initialProfile }) {
         .getCurrentUser()
         .then((user) => {
           setProfile(user);
+          checkFollowStatus();
         })
         .catch((err) => {
           console.error("Error fetching user data:", err);
         });
     }
   }, [userData]);
+  const checkFollowStatus = () => {
+    const following = profile?.followers?.includes(userData.$id);
+    const mutual = following && userData.followers.includes(profile.$id);
+    setIsFollowing(following);
+    setMutualFollow(mutual);
+  };
+
+  const handleFollowToggle = () => {
+    if (isFollowing) {
+      dispatch(unfollowUser(profile.$id));
+    } else {
+      dispatch(followUser(profile.$id));
+    }
+    setIsFollowing(!isFollowing);
+    setMutualFollow(false);
+  };
+
+  const renderFollowButton = () => (
+    <button
+      onClick={handleFollowToggle}
+      className={`px-4 py-2 text-sm rounded-md ${
+        isFollowing ? "bg-green-500 text-white" : "bg-blue-500 text-white"
+      }`}
+    >
+      {isFollowing ? (mutualFollow ? "Follow Back" : "Following") : "Follow"}
+    </button>
+  );
 
   const renderPosts = () => {
-    // Categorize posts into active and inactive based on a status property
     const activePosts = userPosts.filter((post) => post.status === "active");
     const inactivePosts = userPosts.filter(
       (post) => post.status === "inactive"
     );
 
-    // Determine filtered posts based on the activeTab
     let filteredPosts = userPosts;
     if (activeTab === "Allpost") {
       filteredPosts = [...activePosts, ...inactivePosts];
+    } else if (activeTab === "activePosts") {
+      filteredPosts = activePosts;
     } else {
-      filteredPosts = activeTab === "activePosts" ? activePosts : inactivePosts;
+      filteredPosts = inactivePosts;
     }
 
     if (!filteredPosts || filteredPosts.length === 0) {
@@ -68,7 +133,7 @@ function UserProfileCard({ profile: initialProfile }) {
             new Date(post.$updatedAt) > new Date(post.$createdAt);
           return (
             <div
-              className="w-full sm:w-1/2 md:w-1/3 lg:w-1/5 mb-4 mx-2 border border-gray-300 h-96"
+              className="w-full sm:w-1/2 md:w-1/3 lg:w-1/5 mb-4 mx-2 border border-gray-500 h-96"
               key={post.$id}
             >
               <Link to={`/post/${post.$id}`} className="text-gray-900">
@@ -103,9 +168,79 @@ function UserProfileCard({ profile: initialProfile }) {
     );
   };
 
+  const renderSavedPosts = () => {
+    if (!savedPosts || savedPosts.length === 0) {
+      return (
+        <p className="text-center text-gray-500">No saved posts available</p>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap justify-center sm:px-4">
+        <ToastContainer /> {/* Place ToastContainer here */}
+        {savedPosts.map((post, index) => {
+          // Check if featuredImage is valid before using it
+          const imagePreview = post.featuredImage
+            ? appwriteService.getFilePreview(post.featuredImage)
+            : null;
+          return (
+            <div
+              className="w-full sm:w-1/2 md:w-1/3 lg:w-1/5 mb-4 mx-2 border border-gray-500 h-96"
+              key={post.$id}
+            >
+              <Link to={`/post/${post.$id}`} className="text-gray-900">
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt={post.title}
+                    className="w-full h-64 object-cover "
+                  />
+                )}
+                <h5 className="mt-2 px-2 text-2xl font-bold text-black overflow-hidden">
+                  {post.title && post.title.length > 0
+                    ? parse(
+                        post.title.length > 30
+                          ? post.title.substring(0, 30) + "..."
+                          : post.title
+                      )
+                    : "Untitled"}
+                </h5>
+              </Link>
+              <div className="flex justify-between px-2">
+                <div>
+                  <p className="text-sm text-gray-500">
+                    {isUpdated
+                      ? `Updated on: ${formatDate($updatedAt)}`
+                      : `Posted on: ${formatDate($createdAt)}`}
+                  </p>
+                  <p className="text-sm text-gray-600">by {name || userId}</p>
+                </div>
+                <button
+                  className="text-white px-2 rounded-md flex items-center"
+                  onClick={(event) => handleSave(event, post)} // Pass the specific post
+                  style={{
+                    backgroundColor: isSaved ? "green" : "blue",
+                  }}
+                >
+                  {isSaved ? (
+                    <BookmarkBorderIcon style={{ color: "white" }} /> // Outline icon for unsaved
+                  ) : (
+                    <BookmarkIcon style={{ color: "white" }} /> // Filled icon for saved
+                  )}
+                  <span>{isSaved ? "Save" : "Saved"}</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-gradient-to-r from-blue-200 to-purple-200 py- shadow-lg w-full mx-auto border pt-8 border-gray-200 relative">
       <div className="absolute top-4 right-4">
+        <button className="pr-4">{renderFollowButton()}</button>
         <button
           onClick={() => setIsEditing(!isEditing)}
           className="bg-gray-400 text-sm px-4 py-2 rounded-md"
@@ -225,8 +360,20 @@ function UserProfileCard({ profile: initialProfile }) {
           >
             Inactive Posts
           </button>
+          <button
+            onClick={() => setActiveTab("savedPosts")}
+            className={`text-sm px-4 py-2 rounded-md ${
+              activeTab === "savedPosts"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-400 text-gray-900"
+            }`}
+          >
+            Saved Posts
+          </button>
         </div>
-        <div className="mt-4">{renderPosts()}</div>
+        <div className="mt-4">
+          {activeTab === "savedPosts" ? renderSavedPosts() : renderPosts()}
+        </div>
       </div>
     </div>
   );
