@@ -1,36 +1,65 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login as authLogin } from "../store/authSlice";
-import { Button, Input, Logo } from "./index";
-import { useDispatch } from "react-redux";
-import authService from "../appwrite/auth";
-import { useForm } from "react-hook-form";
+import axios from "axios";
+import { toast } from "react-toastify";
+import Cookies from "js-cookie";
 
 function Login() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { register, handleSubmit, errors } = useForm();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const Login = async (data) => {
+  const navigate = useNavigate();
+
+  const login = async (event) => {
+    event.preventDefault();
     setError("");
+    setLoading(true);
+
     try {
-      const session = await authService.login(data);
-      if (session) {
-        const userdata = await authService.getCurrentUser();
-        if (userdata) dispatch(authLogin(userdata));
-        navigate("/");
+      console.log("Sending login request to API...");
+      const response = await axios.post(
+        "https://bg-io.vercel.app/api/v1/auth/auth/login",
+        { email, password },
+        { withCredentials: true }
+      );
+      console.log("API Response:", response.data);
+
+      const { accessToken, refreshToken } = response.data.data;
+      if (accessToken && refreshToken) {
+        // Store tokens in cookies
+        Cookies.set("accessToken", accessToken, { expires: 1, secure: true });
+        Cookies.set("refreshToken", refreshToken, { expires: 7, secure: true });
+
+        // Store tokens in localStorage
+        localStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+
+        toast.success("Login successful!");
+        navigate("/"); // Redirect after successful login
+        window.location.reload();
+      } else {
+        throw new Error("Tokens not received from API");
       }
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      console.error("Login failed:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <div className="flex items-center justify-center w-full py-12 px-4 bg-gray-200">
       <div className="mx-auto w-full max-w-md bg-white rounded-xl p-10 border border-gray-300 shadow-md">
         <div className="mb-4 flex justify-center">
           <span className="inline-block w-full max-w-[100px]">
-            <Logo width="100%" />
+            <img
+              src="/NextGen-Thinkers-Logo.png"
+              alt="NextGen Thinkers Logo"
+              width="100%"
+            />
           </span>
         </div>
         <h2 className="text-center text-2xl font-bold leading-tight text-gray-800">
@@ -46,35 +75,30 @@ function Login() {
           </Link>
         </p>
         {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
-        <form onSubmit={handleSubmit(Login)} className="mt-8">
+        <form onSubmit={login} className="mt-8">
           <div className="space-y-5">
             <input
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              label="Email: "
-              placeholder="Enter your email"
-              type="email"
-              {...register("email", {
-                required: true,
-                validate: {
-                  matchPattern: (value) =>
-                    /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(
-                      value
-                    ) || "Email address must be a valid email address",
-                },
-              })}
+              placeholder="Enter your email or username"
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
+
             <input
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               type="password"
-              label="Password: "
               placeholder="Enter your password"
-              {...register("password", { required: true })}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
+
             <button
               type="submit"
               className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>
