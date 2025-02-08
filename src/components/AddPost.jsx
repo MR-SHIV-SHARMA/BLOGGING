@@ -48,7 +48,10 @@ function AddPost() {
         setMessage(response.data.message || "Something went wrong!");
       }
     } catch (error) {
-      console.error("Error creating post:", error);
+      console.error(
+        "Error creating post:",
+        error.response ? error.response.data : error
+      );
       setMessage("Error creating post!");
     } finally {
       setLoading(false);
