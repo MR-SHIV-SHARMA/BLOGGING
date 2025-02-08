@@ -19,8 +19,10 @@ function AddPost() {
     formData.append("title", title);
     formData.append("content", content);
     if (media) {
-      formData.append("media", media);
+      formData.append("file", media);
     }
+
+    console.log("Submitting FormData:", formData);
 
     try {
       setLoading(true);
@@ -33,7 +35,6 @@ function AddPost() {
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -48,10 +49,7 @@ function AddPost() {
         setMessage(response.data.message || "Something went wrong!");
       }
     } catch (error) {
-      console.error(
-        "Error creating post:",
-        error.response ? error.response.data : error
-      );
+      console.error("Error creating post:", error.response?.data || error);
       setMessage("Error creating post!");
     } finally {
       setLoading(false);
