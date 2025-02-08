@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 
 function AddPost() {
@@ -7,6 +7,7 @@ function AddPost() {
   const [media, setMedia] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const fileInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,10 +20,8 @@ function AddPost() {
     formData.append("title", title);
     formData.append("content", content);
     if (media) {
-      formData.append("file", media);
+      formData.append("media", media); // Backend agar "file" expect kare to "file" kar do
     }
-
-    console.log("Submitting FormData:", formData);
 
     try {
       setLoading(true);
@@ -35,6 +34,7 @@ function AddPost() {
         formData,
         {
           headers: {
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -45,26 +45,20 @@ function AddPost() {
         setTitle("");
         setContent("");
         setMedia(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // Input field clear karna
+        }
       } else {
         setMessage(response.data.message || "Something went wrong!");
       }
     } catch (error) {
-      console.error("Error creating post:", error.response?.data || error);
+      console.error(
+        "Error creating post:",
+        error.response ? error.response.data : error
+      );
       setMessage("Error creating post!");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMediaChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setMessage("File size exceeds 10MB!");
-        setMedia(null);
-      } else {
-        setMedia(file);
-      }
     }
   };
 
@@ -147,7 +141,8 @@ function AddPost() {
                   type="file"
                   className="hidden"
                   accept="image/*,video/*"
-                  onChange={handleMediaChange}
+                  ref={fileInputRef} // Ref added to reset input
+                  onChange={(e) => setMedia(e.target.files[0])}
                 />
               </label>
             </div>
