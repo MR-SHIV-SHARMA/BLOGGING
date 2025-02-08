@@ -33,6 +33,7 @@ function AddPost() {
         formData,
         {
           headers: {
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
         }
@@ -51,6 +52,18 @@ function AddPost() {
       setMessage("Error creating post!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMediaChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setMessage("File size exceeds 10MB!");
+        setMedia(null);
+      } else {
+        setMedia(file);
+      }
     }
   };
 
@@ -133,7 +146,7 @@ function AddPost() {
                   type="file"
                   className="hidden"
                   accept="image/*,video/*"
-                  onChange={(e) => setMedia(e.target.files[0])}
+                  onChange={handleMediaChange}
                 />
               </label>
             </div>
