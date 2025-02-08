@@ -29,7 +29,7 @@ function AddPost() {
       const token = localStorage.getItem("accessToken");
 
       const response = await axios.post(
-        "http://bg-io.vercel.app/api/v1/content/posts",
+        "https://bg-io.vercel.app/api/v1/content/posts",
         formData,
         {
           headers: {
