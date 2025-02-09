@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
 function UserProfileCard() {
   const [profile, setProfile] = useState(null);
-  const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
+  const [isEditing, setIsEditing] = useState(false);
   const [fullname, setFullname] = useState("");
   const [bio, setBio] = useState("");
   const [location, setLocation] = useState("");
@@ -14,6 +14,9 @@ function UserProfileCard() {
   const [socialMedia, setSocialMedia] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
   const [coverImageFile, setCoverImageFile] = useState(null);
+
+  const avatarInputRef = useRef(null);
+  const coverImageInputRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -150,14 +153,19 @@ function UserProfileCard() {
             className="w-full h-full object-cover opacity-90"
           />
         )}
-        <div className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md cursor-pointer">
+
+        <div
+          className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md cursor-pointer z-50"
+          style={{ pointerEvents: "auto" }}
+        >
           <input
             type="file"
-            onChange={(e) => setCoverImageFile(e.target.files[0])}
+            ref={coverImageInputRef}
+            onChange={handleCoverImageChange}
             className="hidden"
           />
           <button
-            onClick={() => {}}
+            onClick={() => coverImageInputRef.current.click()}
             className="text-indigo-600 hover:text-indigo-800"
           >
             📷
@@ -175,11 +183,12 @@ function UserProfileCard() {
           <div className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-md cursor-pointer">
             <input
               type="file"
-              onChange={(e) => setAvatarFile(e.target.files[0])}
+              ref={avatarInputRef}
+              onChange={handleAvatarChange}
               className="hidden"
             />
             <button
-              onClick={() => {}}
+              onClick={() => avatarInputRef.current.click()}
               className="text-indigo-600 hover:text-indigo-800"
             >
               📷
@@ -294,6 +303,24 @@ function UserProfileCard() {
             Cancel
           </button>
         </div>
+      )}
+
+      {/* File Update Buttons */}
+      {avatarFile && (
+        <button
+          onClick={uploadAvatar}
+          className="w-full bg-green-500 text-white py-2 rounded-md mt-4 hover:bg-green-600"
+        >
+          Save Avatar
+        </button>
+      )}
+      {coverImageFile && (
+        <button
+          onClick={uploadCoverImage}
+          className="w-full bg-green-500 text-white py-2 rounded-md mt-4 hover:bg-green-600"
+        >
+          Save Cover Image
+        </button>
       )}
 
       <ToastContainer />
