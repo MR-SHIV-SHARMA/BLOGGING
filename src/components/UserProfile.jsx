@@ -95,7 +95,7 @@ function UserProfileCard() {
 
     await axios
       .patch(
-        "https://bg-io.vercel.app/api/v1/user/profile/media/update-avatar",
+        "http://localhost:3000/api/v1/user/profile/media/update-avatar",
         formData,
         {
           headers: {
