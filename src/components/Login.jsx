@@ -20,7 +20,7 @@ function Login() {
     try {
       console.log("Sending login request to API...");
       const response = await axios.post(
-        "http://localhost:3000/api/v1/auth/auth/login",
+        "https://bg-io.vercel.app/api/v1/auth/auth/login",
         { email, password },
         { withCredentials: true }
       );
