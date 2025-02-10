@@ -14,6 +14,9 @@ function UserProfileCard() {
   const [socialMedia, setSocialMedia] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
   const [coverImageFile, setCoverImageFile] = useState(null);
+  const [activeTab, setActiveTab] = useState("userPosts");
+  const [userPosts, setUserPosts] = useState([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
 
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
@@ -22,7 +25,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
 
     axios
-      .get(`https://bg-io.vercel.app/api/v1/user/profile/view`, {
+      .get("https://bg-io.vercel.app/api/v1/user/profile/view", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -55,7 +58,7 @@ function UserProfileCard() {
     };
 
     axios
-      .patch(`https://bg-io.vercel.app/api/v1/user/profile/media`, updateData, {
+      .patch("https://bg-io.vercel.app/api/v1/user/profile/media", updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -88,6 +91,8 @@ function UserProfileCard() {
   };
 
   const uploadAvatar = async () => {
+    if (!avatarFile) return;
+
     const formData = new FormData();
     formData.append("avatar", avatarFile);
 
@@ -116,6 +121,8 @@ function UserProfileCard() {
   };
 
   const uploadCoverImage = () => {
+    if (!coverImageFile) return;
+
     const formData = new FormData();
     formData.append("coverImage", coverImageFile);
 
@@ -143,8 +150,27 @@ function UserProfileCard() {
       .catch(() => toast.error("Error updating cover image"));
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  };
+
+  useEffect(() => {
+    setIsLoadingPosts(true);
+    const token = localStorage.getItem("accessToken");
+    axios
+      .get("https://bg-io.vercel.app/api/v1/content/posts/user/posts", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        setUserPosts(response.data.data || []);
+      })
+      .catch(() => toast.error("Error fetching user posts"))
+      .finally(() => setIsLoadingPosts(false));
+  }, []);
+
   return (
-    <div className="max-w-4xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden relative p-4 sm:p-6 md:p-8">
+    <div className="max-w-8xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden relative p-4 sm:p-6 md:p-8">
+      {/* Cover Image Section */}
       <div className="h-60 sm:h-72 md:h-80 w-full bg-gradient-to-r from-indigo-500 to-purple-600 relative rounded-lg overflow-hidden">
         {profile?.coverImage && (
           <img
@@ -173,6 +199,7 @@ function UserProfileCard() {
         </div>
       </div>
 
+      {/* Profile Image Section */}
       <div className="flex flex-col items-center -mt-16 md:-mt-20 relative">
         <div className="relative">
           <img
@@ -295,13 +322,50 @@ function UserProfileCard() {
           >
             Save Changes
           </button>
+        </div>
+      )}
+      <h2 className="text-xl font-semibold mb-4">User Posts</h2>
+      {isLoadingPosts ? (
+        <p className="text-gray-500 text-center">Loading posts...</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {userPosts.length > 0 ? (
+            userPosts.map((post) => (
+              <div
+                key={post.id}
+                className="p-5 bg-white rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.03] flex flex-col justify-between"
+              >
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {post.title}
+                  </h3>
+                  <p className="text-gray-700 mb-3 line-clamp-2">
+                    {post.content}
+                  </p>
 
-          <button
-            onClick={() => setIsEditing(false)} // Exit edit mode
-            className="w-full bg-gray-500 text-white py-2 rounded-md mt-4 hover:bg-gray-600"
-          >
-            Cancel
-          </button>
+                  {post.media && (
+                    <div className="w-full h-48 overflow-hidden rounded-lg">
+                      <img
+                        src={post.media}
+                        alt="media"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center mt-4 text-gray-600 text-sm border-t pt-3">
+                  <span>❤️ {post.likes.length}</span>
+                  <span>💬 {post.comments.length}</span>
+                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 col-span-full text-center">
+              No posts available
+            </p>
+          )}
         </div>
       )}
 
