@@ -14,9 +14,12 @@ function UserProfileCard() {
   const [socialMedia, setSocialMedia] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
   const [coverImageFile, setCoverImageFile] = useState(null);
-  const [activeTab, setActiveTab] = useState("userPosts");
+  const [activeTab, setActiveTab] = useState("posts");
   const [userPosts, setUserPosts] = useState([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [newBookmarkName, setNewBookmarkName] = useState("");
+  const [selectedBookmarkId, setSelectedBookmarkId] = useState("");
 
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
@@ -158,7 +161,7 @@ function UserProfileCard() {
     setIsLoadingPosts(true);
     const token = localStorage.getItem("accessToken");
     axios
-      .get("https://bg-io.vercel.app/api/v1/content/posts/user/posts", {
+      .get("http://localhost:3000/api/v1/content/posts/user/posts", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -168,8 +171,151 @@ function UserProfileCard() {
       .finally(() => setIsLoadingPosts(false));
   }, []);
 
+  const createBookmark = async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!newBookmarkName) return;
+
+    try {
+      const response = await axios.post("http://localhost:3000/api/v1/interactions/bookmarks/", { name: newBookmarkName }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        toast.success("Bookmark created successfully!");
+        fetchBookmarks();
+      } else {
+        toast.error(response.data.message || "Failed to create bookmark");
+      }
+    } catch {
+      toast.error("Error creating bookmark");
+    }
+  };
+
+  const fetchBookmarks = async () => {
+    const token = localStorage.getItem("accessToken");
+    try {
+      const response = await axios.get("http://localhost:3000/api/v1/interactions/bookmarks/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setBookmarks(response.data.data || []);
+      } else {
+        toast.error(response.data.message || "Failed to fetch bookmarks");
+      }
+    } catch {
+      toast.error("Error fetching bookmarks");
+    }
+  };
+
+  const addPostToBookmark = async (bookmarkId, postId) => {
+    const token = localStorage.getItem("accessToken");
+    if (!bookmarkId || !postId) {
+      toast.error("Please select a bookmark and a post.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:3000/api/v1/interactions/bookmarks/${bookmarkId}/posts`,
+        { postId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Post added to bookmark successfully!");
+      } else {
+        toast.error(response.data.message || "Failed to add post to bookmark");
+      }
+    } catch (error) {
+      console.error("Error adding post to bookmark:", error);
+      toast.error("Error adding post to bookmark");
+    }
+  };
+
+  const deletePostFromBookmark = async (bookmarkId, postId) => {
+    const token = localStorage.getItem("accessToken");
+    try {
+      const response = await axios.delete(`http://localhost:3000/api/v1/interactions/bookmarks/${bookmarkId}/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        toast.success("Post removed from bookmark successfully!");
+      } else {
+        toast.error(response.data.message || "Failed to remove post from bookmark");
+      }
+    } catch {
+      toast.error("Error removing post from bookmark");
+    }
+  };
+
+  const deleteBookmark = async (bookmarkId) => {
+    const token = localStorage.getItem("accessToken");
+    const postId = deleteBookmark
+    if (!postId) return;
+
+    try {
+      const response = await axios.delete(`http://localhost:3000/api/v1/interactions/bookmarks/${bookmarkId}`, {
+        data: { postId },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        toast.success("Post removed from bookmark successfully!");
+        fetchBookmarks();
+      } else {
+        toast.error(response.data.message || "Failed to remove post from bookmark");
+      }
+    } catch {
+      toast.error("Error removing post from bookmark");
+    }
+  };
+
+  const deletePost = async (postId) => {
+    const token = localStorage.getItem("accessToken");
+    try {
+      const response = await axios.delete(`http://localhost:3000/api/v1/content/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        toast.success("Post deleted successfully!");
+        await fetchUserPosts();
+      } else {
+        toast.error(response.data.message || "Failed to delete post");
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("Error deleting post");
+    }
+  };
+
+  const fetchUserPosts = async () => {
+    const token = localStorage.getItem("accessToken");
+    setIsLoadingPosts(true);
+    try {
+      const response = await axios.get("http://localhost:3000/api/v1/content/posts/user/posts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setUserPosts(response.data.data || []);
+      } else {
+        toast.error(response.data.message || "Failed to fetch user posts");
+      }
+    } catch (error) {
+      console.error("Error fetching user posts:", error);
+      toast.error("Error fetching user posts");
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookmarks();
+  }, []);
+
   return (
     <div className="max-w-8xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden relative p-4 sm:p-6 md:p-8">
+
+
       {/* Cover Image Section */}
       <div className="h-60 sm:h-72 md:h-80 w-full bg-gradient-to-r from-indigo-500 to-purple-600 relative rounded-lg overflow-hidden">
         {profile?.coverImage && (
@@ -324,50 +470,6 @@ function UserProfileCard() {
           </button>
         </div>
       )}
-      <h2 className="text-xl font-semibold mb-4">User Posts</h2>
-      {isLoadingPosts ? (
-        <p className="text-gray-500 text-center">Loading posts...</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {userPosts.length > 0 ? (
-            userPosts.map((post) => (
-              <div
-                key={post.id}
-                className="p-5 bg-white rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.03] flex flex-col justify-between"
-              >
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">
-                    {post.title}
-                  </h3>
-                  <p className="text-gray-700 mb-3 line-clamp-2">
-                    {post.content}
-                  </p>
-
-                  {post.media && (
-                    <div className="w-full h-48 overflow-hidden rounded-lg">
-                      <img
-                        src={post.media}
-                        alt="media"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-between items-center mt-4 text-gray-600 text-sm border-t pt-3">
-                  <span>❤️ {post.likes.length}</span>
-                  <span>💬 {post.comments.length}</span>
-                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 col-span-full text-center">
-              No posts available
-            </p>
-          )}
-        </div>
-      )}
 
       {/* File Update Buttons */}
       {avatarFile && (
@@ -385,6 +487,163 @@ function UserProfileCard() {
         >
           Save Cover Image
         </button>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 mb-4">
+        <button
+          onClick={() => setActiveTab("posts")}
+          className={`py-2 px-4 rounded-lg ${activeTab === "posts" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+        >
+          User Posts
+        </button>
+        <button
+          onClick={() => setActiveTab("bookmarks")}
+          className={`py-2 px-4 rounded-lg ${activeTab === "bookmarks" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+        >
+          Bookmarks
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "posts" ? (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">User Posts</h2>
+          {isLoadingPosts ? (
+            <p className="text-gray-500 text-center">Loading posts...</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {userPosts.length > 0 ? (
+                userPosts.map((post) => (
+                  <div
+                    key={post._id}
+                    className="p-5 bg-white rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.03] flex flex-col justify-between"
+                  >
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {post.title}
+                      </h3>
+                      <p className="text-gray-700 mb-3 line-clamp-2">
+                        {post.content}
+                      </p>
+
+                      {post.media && (
+                        <div className="w-full h-48 overflow-hidden rounded-lg">
+                          <img
+                            src={post.media}
+                            alt="media"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between items-center mt-4 text-gray-600 text-sm border-t pt-3">
+                      <span>❤️ {post.likes.length}</span>
+                      <span>💬 {post.comments.length}</span>
+                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                    </div>
+
+                    {/* Add Post to Bookmark Button */}
+                    <div className="mt-4">
+                      <select
+                        onChange={(e) => setSelectedBookmarkId(e.target.value)} // Set selected bookmark ID
+                        className="border rounded-md px-2 py-1 mr-2"
+                      >
+                        <option value="">Select Bookmark</option>
+                        {bookmarks.map((bookmark) => (
+                          <option key={bookmark._id} value={bookmark._id}>
+                            {bookmark.name || "Untitled Bookmark"}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => addPostToBookmark(selectedBookmarkId, post._id)} // Add post to selected bookmark
+                        className="bg-green-500 text-white py-1 px-2 rounded hover:bg-green-600"
+                        disabled={!selectedBookmarkId} // Disable if no bookmark is selected
+                      >
+                        Add Post
+                      </button>
+                      {/* Delete Post Button */}
+                      <button
+                        onClick={() => deletePost(post._id)} // Call deletePost function
+                        className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600 ml-2"
+                      >
+                        Delete Post
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 col-span-full text-center">No posts available</p>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Bookmarks</h2>
+          <div className="flex items-center mb-4">
+            <input
+              type="text"
+              value={newBookmarkName}
+              onChange={(e) => setNewBookmarkName(e.target.value)}
+              placeholder="Enter bookmark name"
+              className="border rounded-md px-4 py-2 mr-2 flex-grow"
+            />
+            <button
+              onClick={createBookmark}
+              className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+            >
+              Create Bookmark
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {bookmarks.length > 0 ? (
+              bookmarks.map((bookmark) => (
+                <div key={bookmark._id} className="p-4 bg-white rounded-lg shadow-md transition-transform transform hover:scale-105">
+                  <h3 className="font-bold text-lg mb-2">{bookmark.name || "Untitled Bookmark"}</h3>
+                  <div className="flex justify-between items-center mb-2">
+                    <button
+                      onClick={() => deleteBookmark(bookmark._id)} // Call deleteBookmark function
+                      className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600"
+                    >
+                      Delete Bookmark
+                    </button>
+                  </div>
+                  <ul className="list-disc pl-5">
+                    {bookmark.posts.map((post) => (
+                      <li key={post._id} className="flex flex-col bg-gray-50 p-3 rounded-lg shadow-sm mb-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold">{post.title}</span>
+                          <button
+                            onClick={() => deletePostFromBookmark(bookmark._id, post._id)}
+                            className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <p className="text-gray-700 mb-2 line-clamp-2">{post.content}</p>
+
+                        {post.media && (
+                          <div className="w-full h-48 overflow-hidden rounded-lg mb-2">
+                            <img
+                              src={post.media}
+                              alt="media"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center col-span-full">No bookmarks available</p>
+            )}
+          </div>
+        </div>
       )}
 
       <ToastContainer />
