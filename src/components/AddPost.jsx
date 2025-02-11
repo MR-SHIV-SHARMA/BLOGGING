@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 function AddPost() {
@@ -7,58 +7,116 @@ function AddPost() {
   const [media, setMedia] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [filteredTags, setFilteredTags] = useState([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [tagId, setTagId] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("accessToken");
+
+        const categoryResponse = await axios.get(
+          "https://bg-io.vercel.app/api/v1/common/categories/manage",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const tagsResponse = await axios.get(
+          "https://bg-io.vercel.app/api/v1/content/tags/",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (tagsResponse.data.success) {
+          setTags(tagsResponse.data.data);
+        }
+        if (categoryResponse.data.success) {
+          setCategories(categoryResponse.data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching categories and tags:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    setTagInput(value);
+
+    if (value.startsWith("#")) {
+      const searchTerm = value.slice(1).toLowerCase();
+      const filteredTags = tags.filter((tag) =>
+        tag.name.toLowerCase().includes(searchTerm)
+      );
+      setFilteredTags(filteredTags);
+    } else {
+      setFilteredTags([]);
+    }
+  };
+
+  const handleTagClick = (tag) => {
+    // Set the tag ID and update the input field with the tag name
+    setTagId(tag._id); // Set the selected tag ID
+    setTagInput(`#${tag.name}`); // Update the input field with the tag name prefixed by '#'
+    setSelectedTags((prevTags) => [...prevTags, tag._id]); // Add tag ID to selected tags
+    setFilteredTags([]); // Clear suggestions after selection
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !content) {
-      setMessage("Title and content are required!");
+
+    if (!title || !content || !categoryId) {
+      setMessage("Title, content, and category are required!");
+      return;
+    }
+
+    if (!tagId) {
+      setMessage("At least one tag is required!");
       return;
     }
 
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-    if (media) {
-      formData.append("media", media);
-    }
+    if (media) formData.append("media", media);
 
-    // 🔍 Debugging: Check FormData values
-    console.log("📂 FormData Entries:");
-    for (let pair of formData.entries()) {
-      console.log(pair[0], pair[1]);
-    }
+    const categoriesToSubmit = [categoryId];
+    const tagsToSubmit = [tagId];
+
+    formData.append("categoryId", categoriesToSubmit);
+    formData.append("tagId", tagsToSubmit);
 
     try {
       setLoading(true);
       setMessage("");
-
       const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        setMessage("Authorization token is missing!");
+        return;
+      }
 
       const response = await axios.post(
         "https://bg-io.vercel.app/api/v1/content/posts",
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // ✅ Let Axios handle Content-Type
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      console.log("✅ API Response:", response.data);
 
       if (response.data.success) {
         setMessage("Post created successfully!");
         setTitle("");
         setContent("");
         setMedia(null);
+        setCategoryId("");
+        setTagId("");
+        setTagInput(""); // Clear the tag input after successful submission
       } else {
         setMessage(response.data.message || "Something went wrong!");
       }
     } catch (error) {
-      console.error(
-        "❌ Error creating post:",
-        error.response ? error.response.data : error
-      );
+      console.error("Error creating post:", error);
       setMessage("Error creating post!");
     } finally {
       setLoading(false);
@@ -85,106 +143,71 @@ function AddPost() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <input
+            type="text"
+            placeholder="Post title..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-4 py-2.5 border rounded-lg"
+          />
+          <textarea
+            placeholder="Write your post content..."
+            rows="5"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            className="w-full px-4 py-2.5 border rounded-lg"
+          />
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title
-            </label>
+            <select
+              className="w-full px-4 py-2.5 border rounded-lg"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="">Select Category</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <input
               type="text"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-              placeholder="Post title..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
+              placeholder="Search tags (use #)..."
+              value={tagInput}
+              onChange={handleTagInputChange}
+              className="w-full px-4 py-2.5 border rounded-lg"
             />
+            <ul className="border rounded-lg mt-2">
+              {filteredTags.map((tag) => (
+                <li
+                  key={tag._id}
+                  className="p-2 cursor-pointer hover:bg-gray-200"
+                  onClick={() => handleTagClick(tag)}
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content
-            </label>
-            <textarea
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none"
-              placeholder="Write your post content..."
-              rows="5"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Media Upload
-            </label>
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col w-full border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition-colors duration-200">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-10 h-10 text-gray-400 mb-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="text-sm text-gray-500 text-center">
-                    {media ? media.name : "Click to upload image or video"}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    PNG, JPG, MP4 (max. 10MB)
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*,video/*"
-                  onChange={(e) => {
-                    console.log("📸 Selected File:", e.target.files[0]); // 🔍 Debugging
-                    setMedia(e.target.files[0]);
-                  }}
-                />
-              </label>
-            </div>
-          </div>
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={(e) => setMedia(e.target.files[0])}
+          />
 
           <button
             type="submit"
-            className="w-full py-3 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-indigo-600 text-white rounded-lg"
             disabled={loading}
           >
-            {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Posting...
-              </div>
-            ) : (
-              "Create Post"
-            )}
+            {loading ? "Posting..." : "Create Post"}
           </button>
         </form>
       </div>
