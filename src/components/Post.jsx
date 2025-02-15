@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -57,6 +57,35 @@ function PostDetail() {
 
   // At the beginning of your PostDetail component, add the state:
   const [hasCopied, setHasCopied] = useState(false);
+
+  // Create refs for the bookmarks and share dropdowns
+  const bookmarksRef = useRef(null);
+  const shareRef = useRef(null);
+
+  // Outside click handler to close dropdown menus for both bookmarks and share
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        showBookmarks &&
+        bookmarksRef.current &&
+        !bookmarksRef.current.contains(event.target)
+      ) {
+        setShowBookmarks(false);
+      }
+      if (
+        showShareMenu &&
+        shareRef.current &&
+        !shareRef.current.contains(event.target)
+      ) {
+        setShowShareMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showBookmarks, showShareMenu]);
 
   // Updated fetchComments to display the most recent comments first
   const fetchComments = async (forceUpdate = false) => {
@@ -906,7 +935,7 @@ function PostDetail() {
 
           <div className="flex items-center gap-4">
             {/* Bookmark */}
-            <div className="relative">
+            <div className="relative" ref={bookmarksRef}>
               <button
                 onClick={toggleBookmarksDropdown}
                 className="flex items-center gap-2 hover:text-yellow-600 transition-colors"
@@ -947,7 +976,7 @@ function PostDetail() {
             </div>
 
             {/* Share */}
-            <div className="relative">
+            <div className="relative" ref={shareRef}>
               <button
                 onClick={() => setShowShareMenu(!showShareMenu)}
                 className="flex items-center gap-2 hover:text-green-600 transition-colors"
