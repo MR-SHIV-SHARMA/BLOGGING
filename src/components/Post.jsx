@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import {
+  FaUserCircle,
   FaRegBookmark,
   FaBookmark,
   FaRegHeart,
@@ -14,7 +15,6 @@ import {
   FaRegEdit,
   FaTrashAlt,
   FaReply,
-  FaUserCircle,
   FaTwitter,
   FaFacebook,
   FaLinkedin,
@@ -767,7 +767,10 @@ function PostDetail() {
           <div className="flex justify-between">
             {/* Author Info */}
             <div className="flex items-center gap-4">
-              <button className="group relative">
+              <Link
+                to={`/api/v1/user/profile/view/f/${post.userId?.username}`}
+                className="group relative"
+              >
                 <FaUserCircle className="w-12 h-12 text-gray-600 hover:text-blue-600 transition-colors" />
                 <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg p-2 w-48 z-10">
                   <div className="text-sm">
@@ -775,7 +778,7 @@ function PostDetail() {
                     <p className="text-gray-500">View Profile</p>
                   </div>
                 </div>
-              </button>
+              </Link>
               <div>
                 <h3 className="font-medium text-gray-900">
                   {post.userId?.username}
@@ -1052,7 +1055,20 @@ function PostDetail() {
                     className="bg-white p-6 rounded-lg shadow-sm"
                   >
                     <div className="flex items-start gap-4">
-                      <FaUserCircle className="w-10 h-10 text-gray-600" />
+                      <Link
+                        to={`/api/v1/user/profile/view/f/${comment.userId?.username}`}
+                        className="group relative"
+                      >
+                        <FaUserCircle className="w-10 h-10 text-gray-600" />
+                        <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg p-2 w-48 z-10">
+                          <div className="text-sm">
+                            <p className="font-medium">
+                              {comment.userId?.username}
+                            </p>
+                            <p className="text-gray-500">View Profile</p>
+                          </div>
+                        </div>
+                      </Link>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1174,7 +1190,22 @@ function PostDetail() {
                                 key={reply._id}
                                 className="flex items-start gap-3"
                               >
-                                <FaUserCircle className="w-8 h-8 text-gray-600" />
+                                <Link
+                                  to={`/api/v1/user/profile/view/f/${reply.userId?.username}`}
+                                  className="group relative"
+                                >
+                                  <FaUserCircle className="w-8 h-8 text-gray-600" />
+                                  <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg p-2 w-48 z-10">
+                                    <div className="text-sm">
+                                      <p className="font-medium">
+                                        {reply.userId?.username}
+                                      </p>
+                                      <p className="text-gray-500">
+                                        View Profile
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Link>
                                 <div className="flex-1 bg-gray-50 p-3 rounded-lg">
                                   <div className="flex items-center justify-between">
                                     <span className="font-medium">

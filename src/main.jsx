@@ -12,6 +12,9 @@ import Header from "./components/Header";
 import AllPosts from "./components/AllPosts";
 import AddPost from "./components/AddPost";
 import UserProfileCard from "./components/UserProfile";
+import ResetPassword from "./components/ResetPassword";
+import AccountRestoration from "./components/AccountRestoration";
+import PublicUserProfile from "./components/PublicUserProfile";
 
 function App() {
   return (
@@ -25,6 +28,12 @@ function App() {
         <Route path="/all-posts" element={<AllPosts />} />
         <Route path="/add-post" element={<AddPost />} />
         <Route path="/user-profile" element={<UserProfileCard />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/account-restoration" element={<AccountRestoration />} />
+        <Route
+          path="/api/v1/user/profile/view/f/:username"
+          element={<PublicUserProfile />}
+        />
       </Routes>
       <Footer />
     </BrowserRouter>
