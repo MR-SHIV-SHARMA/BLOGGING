@@ -19,31 +19,25 @@ function Login() {
 
   const { email, password } = formData;
 
-  // Updates state for the login form
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle login submission (Implement your own login logic as needed)
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      console.log("Sending login request to API...");
       const response = await axios.post(
         "https://bg-io.vercel.app/api/v1/auth/auth/login",
         { email, password },
         { withCredentials: true }
       );
-      console.log("API Response:", response.data);
 
-      // Destructure the accessToken, refreshToken, and user object from the API response
       const { accessToken, refreshToken, user } = response.data.data;
-      // Extract user id from the user object
+
       const userId = user && user._id ? user._id : null;
-      console.log("Retrieved userId:", userId);
 
       if (accessToken && refreshToken && userId) {
         // Store tokens in cookies
@@ -56,34 +50,30 @@ function Login() {
         localStorage.setItem("userId", userId);
 
         toast.success("Login successful!");
-        navigate("/"); // Redirect after successful login
+        navigate("/");
         window.location.reload();
       } else {
         throw new Error("Tokens or user id not received from API");
       }
     } catch (err) {
-      console.error("Login failed:", err);
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle forgot password submission
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
+      await axios.post(
         "https://bg-io.vercel.app/api/v1/auth/password/forgot-password",
         {
           email: forgotEmail,
         }
       );
       setMessage("Password reset instructions have been sent to your email.");
-      console.log("Forgot Password Response: ", response.data);
     } catch (error) {
       setMessage("An error occurred while sending reset instructions.");
-      console.error("Forgot Password Error: ", error);
     }
   };
 
