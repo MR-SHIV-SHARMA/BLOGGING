@@ -81,9 +81,26 @@ function PublicUserProfile() {
         const followersArray = response.data.data;
         const newCount = followersArray.length;
         const currentUserId = localStorage.getItem("userId");
-        const isFollowed = followersArray.some((follower) => {
-          if (typeof follower === "string") return follower === currentUserId;
-          return String(follower._id) === String(currentUserId);
+
+        // Check if the logged-in user's id is present among the followers.
+        // This handles multiple formats of the follower object.
+        const isFollowed = followersArray.some((item) => {
+          // If the item is a string, compare directly.
+          if (typeof item === "string") {
+            return item === currentUserId;
+          }
+          // If the item has a nested follower object
+          if (item.follower && (item.follower._id || item.follower.id)) {
+            return (
+              String(item.follower._id || item.follower.id) ===
+              String(currentUserId)
+            );
+          }
+          // Fallback: if the item directly has a followerId property.
+          if (item.followerId) {
+            return String(item.followerId) === String(currentUserId);
+          }
+          return false;
         });
 
         setProfile((prevProfile) => ({
@@ -91,8 +108,11 @@ function PublicUserProfile() {
           followersCount: newCount,
           isFollowing: isFollowed,
         }));
+        console.log("Updated follow state:", {
+          isFollowing: isFollowed,
+          followers: followersArray,
+        });
       }
-      console.log("Updated follow state.");
     } catch (err) {
       console.error("Error updating follow state:", err);
     }
@@ -144,37 +164,48 @@ function PublicUserProfile() {
     }
 
     setUpdatingFollow(true);
-
     const payload = {
       followerId: currentUserId,
       followingId: profile._id,
     };
-    const endpoint = profile.isFollowing
-      ? `https://bg-io.vercel.app/api/v1/interactions/follows/unfollow/${profile._id}`
-      : `https://bg-io.vercel.app/api/v1/interactions/follows/follow/${profile._id}`;
 
     try {
-      await axios.post(endpoint, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      updateFollowState();
+      if (profile.isFollowing) {
+        // If already following, use POST for unfollow since DELETE is not supported by your backend.
+        console.log(
+          "Unfollowing user. Calling POST unfollow endpoint for",
+          profile._id
+        );
+        await axios.post(
+          `https://bg-io.vercel.app/api/v1/interactions/follows/unfollow/${profile._id}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // If not following, use POST to follow.
+        console.log(
+          "Following user. Calling POST follow endpoint for",
+          profile._id
+        );
+        await axios.post(
+          `https://bg-io.vercel.app/api/v1/interactions/follows/follow/${profile._id}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
     } catch (err) {
       console.error("Error updating follow status:", err);
       const errorData = err.response?.data;
       let errorMessage = "";
-
       if (typeof errorData === "string") {
         errorMessage = errorData;
       } else if (errorData?.error) {
         errorMessage = errorData.error;
       }
-
-      if (errorMessage.toLowerCase().includes("already following")) {
-        updateFollowState();
-      } else {
-        setError("Error updating follow status.");
-      }
+      setError(errorMessage || "Error updating follow status.");
     } finally {
+      // Refresh follow state from the server.
+      await updateFollowState();
       setUpdatingFollow(false);
     }
   };
