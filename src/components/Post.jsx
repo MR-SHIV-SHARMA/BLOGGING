@@ -52,13 +52,15 @@ function PostDetail() {
   const [likesCache, setLikesCache] = useState({});
   const [commentsCache, setCommentsCache] = useState({});
 
-  // Move fetchComments outside useEffect and make it a component function
-  const fetchComments = async () => {
+  // Updated fetchComments to display the most recent comments first
+  const fetchComments = async (forceUpdate = false) => {
     if (!post?._id) return;
 
-    // Check cache first
-    if (commentsCache[post._id]) {
-      setComments(commentsCache[post._id]);
+    // If not forcing and we have cached comments, then use the cache
+    if (!forceUpdate && commentsCache[post._id]) {
+      const cachedComments = commentsCache[post._id];
+      setComments(cachedComments);
+      setPost((prev) => ({ ...prev, comments: cachedComments }));
       return;
     }
 
@@ -68,12 +70,18 @@ function PostDetail() {
       );
       if (response.data.success) {
         const commentsData = response.data.data.comments;
-        // Update cache
+        // Sort the comments to display the most recent comment at the top
+        const sortedComments = commentsData.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        // Update the cache with sorted comments
         setCommentsCache((prev) => ({
           ...prev,
-          [post._id]: commentsData,
+          [post._id]: sortedComments,
         }));
-        setComments(commentsData);
+        setComments(sortedComments);
+        // Also update the post state so the comment count (post.comments.length) is correct
+        setPost((prev) => ({ ...prev, comments: sortedComments }));
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -414,13 +422,12 @@ function PostDetail() {
     }
   };
 
+  // Updated addComment to force a refresh of the comments after successfully adding one.
   const addComment = async () => {
-    // Validate that the comment is not empty
     if (!newComment.trim()) {
       toast.error("Comment cannot be empty");
       return;
     }
-    // Validate that the user is logged in
     if (!currentUser) {
       toast.error("Please login to add a comment");
       return;
@@ -441,7 +448,9 @@ function PostDetail() {
       if (response.data.success) {
         toast.success("Comment added successfully!");
         setNewComment("");
-        fetchComments();
+
+        // Force re-fetch comments (ignoring cache) so the UI is immediately updated.
+        fetchComments(true);
       } else {
         toast.error(response.data.message || "Failed to add comment");
       }
@@ -911,7 +920,7 @@ function PostDetail() {
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Add to the discussion"
-                className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+                className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] resize-y whitespace-pre-wrap"
               />
               <button
                 onClick={addComment}
@@ -1009,7 +1018,7 @@ function PostDetail() {
                           </div>
                         </div>
 
-                        {/* Comment content */}
+                        {/* Comment Content with updated CSS for proper word wrapping */}
                         {editingCommentId === comment._id ? (
                           <div className="mt-3">
                             <textarea
@@ -1017,7 +1026,7 @@ function PostDetail() {
                               onChange={(e) =>
                                 setEditingCommentText(e.target.value)
                               }
-                              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+                              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[100px] whitespace-pre-wrap break-words"
                               rows="3"
                             />
                             <div className="mt-2 flex gap-2 justify-end">
@@ -1041,7 +1050,7 @@ function PostDetail() {
                             </div>
                           </div>
                         ) : (
-                          <p className="mt-2 text-gray-700">
+                          <p className="mt-2 text-gray-700 whitespace-pre-wrap break-words">
                             {comment.content}
                           </p>
                         )}
@@ -1066,7 +1075,7 @@ function PostDetail() {
                                       ).toLocaleDateString()}
                                     </span>
                                   </div>
-                                  <p className="mt-1 text-gray-700">
+                                  <p className="mt-1 text-gray-700 whitespace-pre-wrap break-words">
                                     {reply.content}
                                   </p>
                                 </div>
