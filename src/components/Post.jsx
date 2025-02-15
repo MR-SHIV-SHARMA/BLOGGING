@@ -83,13 +83,11 @@ function PostDetail() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        // Check localStorage cache first
         const cachedPost = localStorage.getItem(`post_${slug}`);
         if (cachedPost) {
           const parsedPost = JSON.parse(cachedPost);
           const cacheTime = localStorage.getItem(`post_${slug}_time`);
 
-          // Use cache if it's less than 5 minutes old
           if (cacheTime && Date.now() - parseInt(cacheTime) < 5 * 60 * 1000) {
             setPost(parsedPost);
             return parsedPost;
@@ -99,15 +97,12 @@ function PostDetail() {
         const response = await axios.get(
           `https://bg-io.vercel.app/api/v1/content/posts/${slug}`
         );
-
-        if (response?.data?.success) {
-          const postData = response.data.data;
-          // Cache the post data
-          localStorage.setItem(`post_${slug}`, JSON.stringify(postData));
-          localStorage.setItem(`post_${slug}_time`, Date.now().toString());
-          setPost(postData);
-          return postData;
-        }
+        const postData = response.data.data;
+        // Cache the result if needed
+        localStorage.setItem(`post_${slug}`, JSON.stringify(postData));
+        localStorage.setItem(`post_${slug}_time`, Date.now().toString());
+        setPost(postData);
+        return postData;
       } catch (error) {
         console.error("Error fetching post:", error);
       }
@@ -183,7 +178,6 @@ function PostDetail() {
       }
     };
 
-    // Update checkIfLiked to handle null currentUser
     const checkIfLiked = async (postId) => {
       const token = localStorage.getItem("accessToken");
       if (!token || !currentUser) return;
@@ -198,12 +192,9 @@ function PostDetail() {
 
         if (response.data.success) {
           const { likes } = response.data.data;
-          // Check if current user's ID exists in the likes array
           const hasLiked = likes.some(
             (like) => like.userId._id === currentUser._id
           );
-
-          console.log("Has liked:", hasLiked);
           setIsLiked(hasLiked);
 
           // Update likes count
@@ -281,8 +272,6 @@ function PostDetail() {
       return;
     }
 
-    console.log("Adding post to bookmark:", { bookmarkId, postId });
-
     if (isPostAlreadyBookmarked(bookmarkId)) {
       toast.error("This post is already bookmarked in the selected bookmark.");
       return;
@@ -346,7 +335,7 @@ function PostDetail() {
     try {
       const response = await axios.post(
         `https://bg-io.vercel.app/api/v1/interactions/likes/post/${postId}`,
-        { postId }, // Add postId in request body
+        { postId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -426,12 +415,26 @@ function PostDetail() {
   };
 
   const addComment = async () => {
-    console.log("Adding comment:", newComment);
+    // Validate that the comment is not empty
+    if (!newComment.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
+    // Validate that the user is logged in
+    if (!currentUser) {
+      toast.error("Please login to add a comment");
+      return;
+    }
+
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
         `https://bg-io.vercel.app/api/v1/content/comments/post/${post._id}`,
-        { content: newComment },
+        {
+          postId: post._id, // Explicitly send postId
+          userId: currentUser._id, // Explicitly send userId
+          content: newComment, // The comment content
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -449,8 +452,6 @@ function PostDetail() {
   };
 
   const isCommentOwner = (comment) => {
-    console.log("Current user:", currentUser); // Debug log
-    console.log("Comment user:", comment.userId); // Debug log
     return currentUser && currentUser._id === comment.userId._id;
   };
 
@@ -658,14 +659,14 @@ function PostDetail() {
                 <FaUserCircle className="w-12 h-12 text-gray-600 hover:text-blue-600 transition-colors" />
                 <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg p-2 w-48 z-10">
                   <div className="text-sm">
-                    <p className="font-medium">{post.author?.username}</p>
+                    <p className="font-medium">{post.userId?.username}</p>
                     <p className="text-gray-500">View Profile</p>
                   </div>
                 </div>
               </button>
               <div>
                 <h3 className="font-medium text-gray-900">
-                  {post.author?.username}
+                  {post.userId?.username}
                 </h3>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span>{new Date(post.createdAt).toLocaleDateString()}</span>
@@ -781,7 +782,7 @@ function PostDetail() {
               ) : (
                 <FaRegHeart className="text-xl" />
               )}
-              <span>{post.likesCount || 0}</span>
+              <span>{post.likes.length || 0}</span>
             </button>
 
             {/* Comment Button */}
@@ -790,7 +791,7 @@ function PostDetail() {
               className="flex items-center gap-2 hover:text-blue-600 transition-colors"
             >
               <FaRegComment className="text-xl" />
-              <span>{comments?.length || 0}</span>
+              <span>{post.comments?.length || 0}</span>
             </button>
           </div>
 
@@ -901,7 +902,7 @@ function PostDetail() {
             className="mt-8"
           >
             <h3 className="text-xl font-semibold mb-4">
-              Comments ({comments.length})
+              Comments ({post.comments?.length || 0})
             </h3>
 
             {/* Comment Input */}
@@ -923,13 +924,6 @@ function PostDetail() {
             {/* Comments List */}
             <div className="space-y-6">
               {comments.map((comment) => {
-                console.log("Checking comment ownership:", {
-                  commentId: comment._id,
-                  commentUserId: comment.userId,
-                  currentUserId: currentUser?.id,
-                  isOwner: isCommentOwner(comment),
-                });
-
                 return (
                   <motion.div
                     key={comment._id}
@@ -943,7 +937,7 @@ function PostDetail() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-medium">
-                              {comment.userId.username}
+                              {post.userId?.username || "Unknown User"}
                             </span>
                             <span className="text-sm text-gray-500 ml-2">
                               {new Date(comment.createdAt).toLocaleDateString()}
