@@ -52,6 +52,9 @@ function PostDetail() {
   const [likesCache, setLikesCache] = useState({});
   const [commentsCache, setCommentsCache] = useState({});
 
+  // New state for showing interactivity during the comment API call
+  const [isAddingComment, setIsAddingComment] = useState(false);
+
   // Updated fetchComments to display the most recent comments first
   const fetchComments = async (forceUpdate = false) => {
     if (!post?._id) return;
@@ -422,7 +425,7 @@ function PostDetail() {
     }
   };
 
-  // Updated addComment to force a refresh of the comments after successfully adding one.
+  // Updated addComment function with a slight artificial delay
   const addComment = async () => {
     if (!newComment.trim()) {
       toast.error("Comment cannot be empty");
@@ -433,6 +436,7 @@ function PostDetail() {
       return;
     }
 
+    setIsAddingComment(true); // Set loading state
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
@@ -448,7 +452,6 @@ function PostDetail() {
       if (response.data.success) {
         toast.success("Comment added successfully!");
         setNewComment("");
-
         // Force re-fetch comments (ignoring cache) so the UI is immediately updated.
         fetchComments(true);
       } else {
@@ -457,6 +460,11 @@ function PostDetail() {
     } catch (error) {
       console.error("Error adding comment:", error);
       toast.error("Error adding comment");
+    } finally {
+      // Introduce a small delay (300ms) so "Commenting..." is visible even if the API call is fast.
+      setTimeout(() => {
+        setIsAddingComment(false);
+      }, 300);
     }
   };
 
@@ -924,9 +932,14 @@ function PostDetail() {
               />
               <button
                 onClick={addComment}
-                className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={isAddingComment}
+                className={`mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors ${
+                  isAddingComment
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-blue-700"
+                }`}
               >
-                Comment
+                {isAddingComment ? "Commenting..." : "Comment"}
               </button>
             </div>
 
