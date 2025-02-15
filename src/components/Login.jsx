@@ -5,15 +5,28 @@ import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  const login = async (event) => {
-    event.preventDefault();
+  const { email, password } = formData;
+
+  // Updates state for the login form
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle login submission (Implement your own login logic as needed)
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
     setError("");
     setLoading(true);
 
@@ -26,21 +39,27 @@ function Login() {
       );
       console.log("API Response:", response.data);
 
-      const { accessToken, refreshToken } = response.data.data;
-      if (accessToken && refreshToken) {
+      // Destructure the accessToken, refreshToken, and user object from the API response
+      const { accessToken, refreshToken, user } = response.data.data;
+      // Extract user id from the user object
+      const userId = user && user._id ? user._id : null;
+      console.log("Retrieved userId:", userId);
+
+      if (accessToken && refreshToken && userId) {
         // Store tokens in cookies
         Cookies.set("accessToken", accessToken, { expires: 1, secure: true });
         Cookies.set("refreshToken", refreshToken, { expires: 7, secure: true });
 
-        // Store tokens in localStorage
+        // Store tokens and userId in localStorage
         localStorage.setItem("accessToken", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("userId", userId);
 
         toast.success("Login successful!");
         navigate("/"); // Redirect after successful login
         window.location.reload();
       } else {
-        throw new Error("Tokens not received from API");
+        throw new Error("Tokens or user id not received from API");
       }
     } catch (err) {
       console.error("Login failed:", err);
@@ -49,6 +68,26 @@ function Login() {
       setLoading(false);
     }
   };
+
+  // Handle forgot password submission
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "https://bg-io.vercel.app/api/v1/auth/password/forgot-password",
+        {
+          email: forgotEmail,
+        }
+      );
+      setMessage("Password reset instructions have been sent to your email.");
+      console.log("Forgot Password Response: ", response.data);
+    } catch (error) {
+      setMessage("An error occurred while sending reset instructions.");
+      console.error("Forgot Password Error: ", error);
+    }
+  };
+
+  const currentUserId = localStorage.getItem("userId");
 
   return (
     <div className="flex items-center justify-center w-full py-12 px-4 bg-gray-200">
@@ -75,33 +114,80 @@ function Login() {
           </Link>
         </p>
         {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
-        <form onSubmit={login} className="mt-8">
-          <div className="space-y-5">
-            <input
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email or username"
-              type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+        {!showForgotPassword ? (
+          <form onSubmit={handleLoginSubmit} className="mt-8">
+            <div className="space-y-5">
+              <input
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your email or username"
+                type="text"
+                name="email"
+                value={email}
+                onChange={handleInputChange}
+              />
 
-            <input
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+              <input
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type="password"
+                placeholder="Enter your password"
+                name="password"
+                value={password}
+                onChange={handleInputChange}
+              />
 
+              <button
+                type="submit"
+                className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
+            </div>
             <button
-              type="submit"
-              className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowForgotPassword(true);
+                setForgotEmail(email);
+              }}
+              className="w-full px-4 py-2 font-semibold text-blue-600 rounded-md transition duration-200 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              Forgot Password?
             </button>
-          </div>
-        </form>
+          </form>
+        ) : (
+          <form onSubmit={handleForgotPassword} className="mt-8">
+            <div className="space-y-5">
+              <input
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your email"
+                type="email"
+                name="forgotEmail"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+              />
+
+              <button
+                type="submit"
+                className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Send Reset Link
+              </button>
+            </div>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                setShowForgotPassword(false);
+              }}
+              className="w-full px-4 py-2 font-semibold text-blue-600 rounded-md transition duration-200 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Back to Login
+            </button>
+          </form>
+        )}
+        {message && (
+          <p className="text-green-600 mt-4 text-center">{message}</p>
+        )}
       </div>
     </div>
   );
