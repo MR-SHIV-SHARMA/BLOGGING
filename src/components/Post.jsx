@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import {
   FaRegBookmark,
   FaBookmark,
@@ -759,32 +759,6 @@ function PostDetail() {
       {/* Hero Section */}
       <div className="w-full bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-          {/* Category & Read Time */}
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
-            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-              {post.categories?.[0]?.name || "Uncategorized"}
-            </span>
-            <div className="flex items-center gap-3 text-gray-600">
-              {/* View Count */}
-              <div className="flex items-center gap-1">
-                <FaRegEye className="text-lg" />
-                <span>1.2k views</span>
-              </div>
-
-              {/* Read Time */}
-              <div className="flex items-center gap-1">
-                <FaClock className="text-lg" />
-                <span>{estimatedReadTime} min read</span>
-              </div>
-
-              {/* Date */}
-              <div className="flex items-center gap-1">
-                <FaCalendarAlt className="text-lg" />
-                <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-
           {/* Title */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-gray-900 leading-tight mb-6">
             {post.title}
@@ -792,7 +766,7 @@ function PostDetail() {
 
           <div className="flex justify-between">
             {/* Author Info */}
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
               <button className="group relative">
                 <FaUserCircle className="w-12 h-12 text-gray-600 hover:text-blue-600 transition-colors" />
                 <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-lg p-2 w-48 z-10">
@@ -807,9 +781,17 @@ function PostDetail() {
                   {post.userId?.username}
                 </h3>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                  <span>·</span>
-                  <span>{estimatedReadTime} min read</span>
+                  {/* Read Time */}
+                  <div className="flex items-center gap-1">
+                    <FaClock className="text-lg" />
+                    <span>{estimatedReadTime} min read</span>
+                  </div>
+
+                  {/* Date */}
+                  <div className="flex items-center gap-1">
+                    <FaCalendarAlt className="text-lg" />
+                    <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -868,7 +850,6 @@ function PostDetail() {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Featured Image */}
@@ -876,7 +857,7 @@ function PostDetail() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-4"
           >
             <img
               src={post.media}
@@ -885,6 +866,20 @@ function PostDetail() {
             />
           </motion.div>
         )}
+
+        {/* Category & Read Time */}
+        <div className="flex justify-between items-center gap-4 text-sm text-gray-600 mb-4">
+          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+            {post.categories?.[0]?.name || "Uncategorized"}
+          </span>
+          <div className="flex items-center gap-3 text-gray-600">
+            {/* View Count */}
+            <div className="flex items-center gap-1">
+              <FaRegEye className="text-lg" />
+              <span>1.2k views</span>
+            </div>
+          </div>
+        </div>
 
         {/* Content */}
         <div className="prose prose-lg max-w-none">
@@ -1237,6 +1232,7 @@ function PostDetail() {
           </motion.div>
         )}
       </div>
+      <ToastContainer />;
     </div>
   ) : (
     <div className="flex items-center justify-center h-screen bg-gray-50">
