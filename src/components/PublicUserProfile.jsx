@@ -32,7 +32,6 @@ function PublicUserProfile() {
           setError("Profile data is not available.");
         }
       } catch (err) {
-        console.error("Error fetching profile:", err);
         setError("Error fetching profile.");
       } finally {
         setLoading(false);
@@ -54,12 +53,10 @@ function PublicUserProfile() {
         );
         if (response.data?.data) {
           setPosts(response.data.data);
-          console.log("Fetched posts:", response.data.data);
         } else {
           setPostsError("No posts available.");
         }
       } catch (err) {
-        console.error("Error fetching posts:", err);
         setPostsError("Error fetching posts.");
       } finally {
         setPostsLoading(false);
@@ -82,21 +79,16 @@ function PublicUserProfile() {
         const newCount = followersArray.length;
         const currentUserId = localStorage.getItem("userId");
 
-        // Check if the logged-in user's id is present among the followers.
-        // This handles multiple formats of the follower object.
         const isFollowed = followersArray.some((item) => {
-          // If the item is a string, compare directly.
           if (typeof item === "string") {
             return item === currentUserId;
           }
-          // If the item has a nested follower object
           if (item.follower && (item.follower._id || item.follower.id)) {
             return (
               String(item.follower._id || item.follower.id) ===
               String(currentUserId)
             );
           }
-          // Fallback: if the item directly has a followerId property.
           if (item.followerId) {
             return String(item.followerId) === String(currentUserId);
           }
@@ -108,13 +100,9 @@ function PublicUserProfile() {
           followersCount: newCount,
           isFollowing: isFollowed,
         }));
-        console.log("Updated follow state:", {
-          isFollowing: isFollowed,
-          followers: followersArray,
-        });
       }
     } catch (err) {
-      console.error("Error updating follow state:", err);
+      setError("Error updating follow state.");
     }
   };
 
@@ -142,9 +130,8 @@ function PublicUserProfile() {
             }));
           }
         }
-        console.log("Following count:", response.data?.data.length);
       } catch (err) {
-        console.error("Error fetching following:", err);
+        setError("Error fetching following count.");
       }
     }
     fetchFollowing();
@@ -171,22 +158,12 @@ function PublicUserProfile() {
 
     try {
       if (profile.isFollowing) {
-        // If already following, use POST for unfollow since DELETE is not supported by your backend.
-        console.log(
-          "Unfollowing user. Calling POST unfollow endpoint for",
-          profile._id
-        );
         await axios.post(
           `https://bg-io.vercel.app/api/v1/interactions/follows/unfollow/${profile._id}`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        // If not following, use POST to follow.
-        console.log(
-          "Following user. Calling POST follow endpoint for",
-          profile._id
-        );
         await axios.post(
           `https://bg-io.vercel.app/api/v1/interactions/follows/follow/${profile._id}`,
           payload,
@@ -194,7 +171,6 @@ function PublicUserProfile() {
         );
       }
     } catch (err) {
-      console.error("Error updating follow status:", err);
       const errorData = err.response?.data;
       let errorMessage = "";
       if (typeof errorData === "string") {
@@ -204,7 +180,6 @@ function PublicUserProfile() {
       }
       setError(errorMessage || "Error updating follow status.");
     } finally {
-      // Refresh follow state from the server.
       await updateFollowState();
       setUpdatingFollow(false);
     }
