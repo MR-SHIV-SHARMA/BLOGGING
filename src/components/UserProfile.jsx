@@ -23,6 +23,10 @@ function UserProfileCard() {
   const [newBookmarkName, setNewBookmarkName] = useState("");
   const [selectedBookmarkId, setSelectedBookmarkId] = useState("");
 
+  // NEW: State for editing a post and updating its media file
+  const [editingPost, setEditingPost] = useState(null);
+  const [editingMediaFile, setEditingMediaFile] = useState(null);
+
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
 
@@ -30,7 +34,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
 
     axios
-      .get("https://bg-io.vercel.app/api/v1/user/profile/view", {
+      .get("http://localhost:3000/api/v1/user/profile/view", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -63,7 +67,7 @@ function UserProfileCard() {
     };
 
     axios
-      .patch("https://bg-io.vercel.app/api/v1/user/profile/media", updateData, {
+      .patch("http://localhost:3000/api/v1/user/profile/media", updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -105,7 +109,7 @@ function UserProfileCard() {
 
     await axios
       .patch(
-        "https://bg-io.vercel.app/api/v1/user/profile/media/update-avatar",
+        "http://localhost:3000/api/v1/user/profile/media/update-avatar",
         formData,
         {
           headers: {
@@ -135,7 +139,7 @@ function UserProfileCard() {
 
     axios
       .patch(
-        "https://bg-io.vercel.app/api/v1/user/profile/media/update-cover-image",
+        "http://localhost:3000/api/v1/user/profile/media/update-cover-image",
         formData,
         {
           headers: {
@@ -163,7 +167,7 @@ function UserProfileCard() {
     setIsLoadingPosts(true);
     const token = localStorage.getItem("accessToken");
     axios
-      .get("https://bg-io.vercel.app/api/v1/content/posts/user/posts", {
+      .get("http://localhost:3000/api/v1/content/posts/user/posts", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -179,7 +183,7 @@ function UserProfileCard() {
 
     try {
       const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
+        "http://localhost:3000/api/v1/interactions/bookmarks/",
         { name: newBookmarkName },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -200,7 +204,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.get(
-        "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
+        "http://localhost:3000/api/v1/interactions/bookmarks/",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -224,7 +228,7 @@ function UserProfileCard() {
 
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts`,
+        `http://localhost:3000/api/v1/interactions/bookmarks/${bookmarkId}/posts`,
         { postId },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -246,7 +250,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts/${postId}`,
+        `http://localhost:3000/api/v1/interactions/bookmarks/${bookmarkId}/posts/${postId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -270,7 +274,7 @@ function UserProfileCard() {
 
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}`,
+        `http://localhost:3000/api/v1/interactions/bookmarks/${bookmarkId}`,
         {
           data: { postId },
           headers: { Authorization: `Bearer ${token}` },
@@ -293,7 +297,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/content/posts/${postId}`,
+        `http://localhost:3000/api/v1/content/posts/${postId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -315,7 +319,7 @@ function UserProfileCard() {
     setIsLoadingPosts(true);
     try {
       const response = await axios.get(
-        "https://bg-io.vercel.app/api/v1/content/posts/user/posts",
+        "http://localhost:3000/api/v1/content/posts/user/posts",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -337,8 +341,45 @@ function UserProfileCard() {
     fetchBookmarks();
   }, []);
 
-  const editPost = (postId) => {
-    toast.info("Edit functionality is not implemented yet.");
+  // NEW: Updated editPost to open the editing modal with the full post object
+  // and reset the editing media file state.
+  const editPost = (post) => {
+    setEditingPost(post);
+    setEditingMediaFile(null);
+  };
+
+  // NEW: Function to update the post using PATCH and sending a file for media.
+  const updatePost = async () => {
+    const token = localStorage.getItem("accessToken");
+    const formData = new FormData();
+    formData.append("title", editingPost.title);
+    formData.append("content", editingPost.content);
+    if (editingMediaFile) {
+      formData.append("media", editingMediaFile);
+    }
+
+    try {
+      const response = await axios.patch(
+        `http://localhost:3000/api/v1/content/posts/${editingPost._id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.data.success) {
+        toast.success("Post updated successfully!");
+        fetchUserPosts();
+        setEditingPost(null); // close the modal
+        setEditingMediaFile(null);
+      } else {
+        toast.error(response.data.message || "Failed to update post");
+      }
+    } catch (error) {
+      console.error("Error updating post:", error);
+      toast.error("Error updating post");
+    }
   };
 
   return (
@@ -580,7 +621,7 @@ function UserProfileCard() {
                       </div>
                       <div className="mt-4 flex gap-2">
                         <button
-                          onClick={() => editPost(post._id)}
+                          onClick={() => editPost(post)} // Open modal to edit post
                           title="Edit Post"
                           className="w-full bg-blue-500 text-white rounded-md py-2 hover:bg-blue-600 transition flex items-center justify-center"
                         >
@@ -635,7 +676,7 @@ function UserProfileCard() {
                   </h3>
                   <div className="flex justify-between items-center mb-2">
                     <button
-                      onClick={() => deleteBookmark(bookmark._id)} // Call deleteBookmark function
+                      onClick={() => deleteBookmark(bookmark._id)}
                       className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600"
                     >
                       Delete Bookmark
@@ -681,6 +722,61 @@ function UserProfileCard() {
                 No bookmarks available
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Editing Modal for updating a post */}
+      {editingPost && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Edit Post</h2>
+            <div className="mb-4">
+              <label className="block text-gray-700">Title</label>
+              <input
+                type="text"
+                value={editingPost.title}
+                onChange={(e) =>
+                  setEditingPost({ ...editingPost, title: e.target.value })
+                }
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700">Content</label>
+              <textarea
+                value={editingPost.content}
+                onChange={(e) =>
+                  setEditingPost({ ...editingPost, content: e.target.value })
+                }
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700">Media File</label>
+              <input
+                type="file"
+                onChange={(e) => setEditingMediaFile(e.target.files[0])}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  setEditingPost(null);
+                  setEditingMediaFile(null);
+                }}
+                className="mr-4 bg-gray-500 text-white py-1 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updatePost}
+                className="bg-blue-500 text-white py-1 px-4 rounded"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}

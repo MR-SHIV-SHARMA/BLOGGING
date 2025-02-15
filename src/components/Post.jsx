@@ -821,28 +821,6 @@ function PostDetail() {
                       <FaRegEdit className="text-gray-600" />
                       Report Post
                     </button>
-                    {post.isAuthor && (
-                      <>
-                        <button
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-                          onClick={() => {
-                            /* Add edit functionality */
-                          }}
-                        >
-                          <FaRegEdit className="text-gray-600" />
-                          Edit Post
-                        </button>
-                        <button
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600"
-                          onClick={() => {
-                            /* Add delete functionality */
-                          }}
-                        >
-                          <FaTrashAlt className="text-red-600" />
-                          Delete Post
-                        </button>
-                      </>
-                    )}
                   </div>
                 </motion.div>
               )}
