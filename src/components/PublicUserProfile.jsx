@@ -23,10 +23,6 @@ function PublicUserProfile() {
         );
         if (response.data?.data) {
           setData(response.data.data);
-          console.log(
-            "fetchUserProfile: Received response:",
-            response.data.data
-          );
         }
       } catch (err) {
         setError("Error fetching profile data.");

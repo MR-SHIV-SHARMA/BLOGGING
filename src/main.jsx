@@ -31,7 +31,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/account-restoration" element={<AccountRestoration />} />
         <Route
-          path="/api/v1/user/profile/view/f/:username"
+          path="/api/v1/user/profile/view/f/:userId"
           element={<PublicUserProfile />}
         />
       </Routes>

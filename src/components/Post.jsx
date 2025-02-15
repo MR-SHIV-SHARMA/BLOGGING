@@ -768,7 +768,7 @@ function PostDetail() {
             {/* Author Info */}
             <div className="flex items-center gap-4">
               <Link
-                to={`/api/v1/user/profile/view/f/${post.userId?.username}`}
+                to={`/api/v1/user/profile/view/f/${post.userId?._id}`}
                 className="group relative"
               >
                 <FaUserCircle className="w-12 h-12 text-gray-600 hover:text-blue-600 transition-colors" />
@@ -1056,7 +1056,7 @@ function PostDetail() {
                   >
                     <div className="flex items-start gap-4">
                       <Link
-                        to={`/api/v1/user/profile/view/f/${comment.userId?.username}`}
+                        to={`/api/v1/user/profile/view/f/${comment.userId?._id}`}
                         className="group relative"
                       >
                         <FaUserCircle className="w-10 h-10 text-gray-600" />
@@ -1191,7 +1191,7 @@ function PostDetail() {
                                 className="flex items-start gap-3"
                               >
                                 <Link
-                                  to={`/api/v1/user/profile/view/f/${reply.userId?.username}`}
+                                  to={`/api/v1/user/profile/view/f/${reply.userId?._id}`}
                                   className="group relative"
                                 >
                                   <FaUserCircle className="w-8 h-8 text-gray-600" />
