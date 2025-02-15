@@ -16,7 +16,7 @@ function AccountRestoration() {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/v1/user/account/request-restoration",
+        "https://bg-io.vercel.app/api/v1/user/account/request-restoration",
         { email }
       );
       if (response.data.success) {

@@ -26,7 +26,7 @@ function ResetPassword() {
     try {
       // Make the POST request to the reset-password endpoint with the token in the query
       const response = await axios.post(
-        `http://localhost:3000/api/v1/auth/password/reset-password?token=${token}`,
+        `https://bg-io.vercel.app/api/v1/auth/password/reset-password?token=${token}`,
         { newPassword }
       );
       setMessage("Password has been reset successfully. You can now login with your new password.");

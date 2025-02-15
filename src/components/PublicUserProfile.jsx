@@ -23,7 +23,7 @@ function PublicUserProfile() {
     }
 
     axios
-      .get(`http://localhost:3000/api/v1/user/profile/view/f/${username}`, {
+      .get(`https://bg-io.vercel.app/api/v1/user/profile/view/f/${username}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -50,7 +50,7 @@ function PublicUserProfile() {
     console.log("profile publice", profile._id);
     axios
       .get(
-        `http://localhost:3000/api/v1/content/posts/user/${profile._id}/posts`,
+        `https://bg-io.vercel.app/api/v1/content/posts/user/${profile._id}/posts`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -98,8 +98,8 @@ function PublicUserProfile() {
     // If profile.isFollowing is true then the user should be able to unfollow.
     // Otherwise, use the follow endpoint.
     const endpoint = profile.isFollowing
-      ? `http://localhost:3000/api/v1/interactions/follows/unfollow/${profile._id}`
-      : `http://localhost:3000/api/v1/interactions/follows/follow/${profile._id}`;
+      ? `https://bg-io.vercel.app/api/v1/interactions/follows/unfollow/${profile._id}`
+      : `https://bg-io.vercel.app/api/v1/interactions/follows/follow/${profile._id}`;
 
     axios
       .post(endpoint, payload, {
