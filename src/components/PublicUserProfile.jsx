@@ -3,7 +3,10 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 
 function PublicUserProfile() {
+  // Retrieve the username from the URL parameters
   const { username } = useParams();
+
+  // State declarations for profile, posts, and relevant loading/error states
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,74 +15,148 @@ function PublicUserProfile() {
   const [postsError, setPostsError] = useState(null);
   const [updatingFollow, setUpdatingFollow] = useState(false);
 
-  // Fetch profile information using the username
+  /**
+   * Fetch and set profile data based on the username.
+   */
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    async function fetchProfile() {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        setError("No access token found. Please log in.");
+        setLoading(false);
+        return;
+      }
 
-    if (!token) {
-      setError("No access token found. Please log in.");
-      setLoading(false);
-      return;
-    }
-
-    axios
-      .get(`https://bg-io.vercel.app/api/v1/user/profile/view/f/${username}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
+      try {
+        const response = await axios.get(
+          `https://bg-io.vercel.app/api/v1/user/profile/view/f/${username}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         if (response.data?.data) {
+          // Initialize profile without isFollowing so that we fetch it separately
           setProfile(response.data.data);
         } else {
           setError("Profile data is not available.");
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching profile:", err);
         setError("Error fetching profile.");
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+    fetchProfile();
   }, [username]);
 
-  // Once profile is loaded, fetch the user's posts using the profile's _id
+  /**
+   * Once the profile is loaded, fetch the posts for that user.
+   */
   useEffect(() => {
-    if (!profile || !profile._id) return;
-    const token = localStorage.getItem("accessToken");
-    setPostsLoading(true);
-    console.log("profile publice", profile._id);
-    axios
-      .get(
-        `https://bg-io.vercel.app/api/v1/content/posts/user/${profile._id}/posts`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-      .then((response) => {
+    if (!profile?._id) return;
+
+    async function fetchPosts() {
+      const token = localStorage.getItem("accessToken");
+      setPostsLoading(true);
+      try {
+        const response = await axios.get(
+          `https://bg-io.vercel.app/api/v1/content/posts/user/${profile._id}/posts`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         if (response.data?.data) {
           setPosts(response.data.data);
+          console.log("Fetched posts:", response.data.data);
         } else {
           setPostsError("No posts available.");
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching posts:", err);
         setPostsError("Error fetching posts.");
-      })
-      .finally(() => {
+      } finally {
         setPostsLoading(false);
-      });
-  }, [profile]);
+      }
+    }
+    fetchPosts();
+  }, [profile?._id]);
 
-  // Toggle follow/unfollow using the profile's _id
-  const toggleFollow = () => {
+  const updateFollowState = async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!profile?._id) return;
+
+    try {
+      const response = await axios.get(
+        `https://bg-io.vercel.app/api/v1/interactions/follows/followers/${profile._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data?.data) {
+        const followersArray = response.data.data;
+        const newCount = followersArray.length;
+        const currentUserId = localStorage.getItem("userId");
+        // Convert IDs to strings for a more robust comparison.
+        const isFollowed = followersArray.some((follower) => {
+          if (typeof follower === "string") return follower === currentUserId;
+          return String(follower._id) === String(currentUserId);
+        });
+
+        setProfile((prevProfile) => ({
+          ...prevProfile,
+          followersCount: newCount,
+          isFollowing: isFollowed,
+        }));
+      }
+      console.log("Updated follow state.");
+    } catch (err) {
+      console.error("Error updating follow state:", err);
+    }
+  };
+
+  // Call updateFollowState when profile._id becomes available (or changes)
+  useEffect(() => {
+    if (profile?._id) {
+      updateFollowState();
+    }
+  }, [profile?._id]);
+
+  /**
+   * Fetch the current following count.
+   */
+  useEffect(() => {
+    if (!profile?._id) return;
+
+    const token = localStorage.getItem("accessToken");
+    async function fetchFollowing() {
+      try {
+        const response = await axios.get(
+          `https://bg-io.vercel.app/api/v1/interactions/follows/following/${profile._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (response.data?.data) {
+          const newCount = response.data.data.length;
+          // Update the following count only if it has changed.
+          if (profile.followingCount !== newCount) {
+            setProfile((prevProfile) => ({
+              ...prevProfile,
+              followingCount: newCount,
+            }));
+          }
+        }
+        console.log("Following count:", response.data?.data.length);
+      } catch (err) {
+        console.error("Error fetching following:", err);
+      }
+    }
+    fetchFollowing();
+  }, [profile?._id]);
+
+  /**
+   * Toggle follow/unfollow for the user.
+   */
+  const toggleFollow = async () => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       setError("Please log in to follow/unfollow users.");
       return;
     }
 
-    // Retrieve the current logged in user's id; ensure this value is stored when the user logs in.
     const currentUserId = localStorage.getItem("userId");
     if (!currentUserId) {
       setError("No user ID found. Please log in.");
@@ -88,66 +165,48 @@ function PublicUserProfile() {
 
     setUpdatingFollow(true);
 
-    // Prepare the payload with both needed IDs.
+    // Prepare the payload and determine the endpoint based on the current follow state.
     const payload = {
       followerId: currentUserId,
       followingId: profile._id,
     };
-
-    // Choose the endpoint based on the current follow state.
-    // If profile.isFollowing is true then the user should be able to unfollow.
-    // Otherwise, use the follow endpoint.
     const endpoint = profile.isFollowing
       ? `https://bg-io.vercel.app/api/v1/interactions/follows/unfollow/${profile._id}`
       : `https://bg-io.vercel.app/api/v1/interactions/follows/follow/${profile._id}`;
 
-    axios
-      .post(endpoint, payload, {
+    try {
+      await axios.post(endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        // Toggle follow status and update followers count accordingly.
-        setProfile((prev) => ({
-          ...prev,
-          isFollowing: !prev.isFollowing,
-          followersCount: prev.isFollowing
-            ? prev.followersCount - 1
-            : prev.followersCount + 1,
-        }));
-      })
-      .catch((err) => {
-        console.error("Error updating follow status:", err);
-
-        // The backend might be returning an HTML error page instead of JSON.
-        const errorData = err.response?.data;
-        let errorMessage = "";
-
-        if (typeof errorData === "string") {
-          // If the error data is HTML or plain text, check if it includes "already following"
-          errorMessage = errorData;
-        } else if (errorData?.error) {
-          errorMessage = errorData.error;
-        }
-
-        if (errorMessage.toLowerCase().includes("already following")) {
-          // Even if the user clicked follow when they were already following,
-          // update the state so the UI properly shows the Unfollow button.
-          setProfile((prev) => ({
-            ...prev,
-            isFollowing: true,
-          }));
-        } else {
-          setError("Error updating follow status.");
-        }
-      })
-      .finally(() => {
-        setUpdatingFollow(false);
       });
+      // After a successful follow/unfollow, refresh follow state.
+      updateFollowState();
+    } catch (err) {
+      console.error("Error updating follow status:", err);
+      const errorData = err.response?.data;
+      let errorMessage = "";
+
+      if (typeof errorData === "string") {
+        errorMessage = errorData;
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      }
+
+      // If the error indicates "already following", update the state to reflect that.
+      if (errorMessage.toLowerCase().includes("already following")) {
+        updateFollowState();
+      } else {
+        setError("Error updating follow status.");
+      }
+    } finally {
+      setUpdatingFollow(false);
+    }
   };
 
+  // Display loading or error states if applicable
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
+  // Render profile and posts
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden p-6">
       {/* Cover Image */}
