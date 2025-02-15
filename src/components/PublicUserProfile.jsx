@@ -3,10 +3,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 
 function PublicUserProfile() {
-  // Retrieve the username from the URL parameters
   const { username } = useParams();
-
-  // State declarations for profile, posts, and relevant loading/error states
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,9 +12,6 @@ function PublicUserProfile() {
   const [postsError, setPostsError] = useState(null);
   const [updatingFollow, setUpdatingFollow] = useState(false);
 
-  /**
-   * Fetch and set profile data based on the username.
-   */
   useEffect(() => {
     async function fetchProfile() {
       const token = localStorage.getItem("accessToken");
@@ -33,7 +27,6 @@ function PublicUserProfile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (response.data?.data) {
-          // Initialize profile without isFollowing so that we fetch it separately
           setProfile(response.data.data);
         } else {
           setError("Profile data is not available.");
@@ -48,9 +41,6 @@ function PublicUserProfile() {
     fetchProfile();
   }, [username]);
 
-  /**
-   * Once the profile is loaded, fetch the posts for that user.
-   */
   useEffect(() => {
     if (!profile?._id) return;
 
@@ -91,7 +81,6 @@ function PublicUserProfile() {
         const followersArray = response.data.data;
         const newCount = followersArray.length;
         const currentUserId = localStorage.getItem("userId");
-        // Convert IDs to strings for a more robust comparison.
         const isFollowed = followersArray.some((follower) => {
           if (typeof follower === "string") return follower === currentUserId;
           return String(follower._id) === String(currentUserId);
@@ -109,19 +98,14 @@ function PublicUserProfile() {
     }
   };
 
-  // Call updateFollowState when profile._id becomes available (or changes)
   useEffect(() => {
     if (profile?._id) {
       updateFollowState();
     }
   }, [profile?._id]);
 
-  /**
-   * Fetch the current following count.
-   */
   useEffect(() => {
     if (!profile?._id) return;
-
     const token = localStorage.getItem("accessToken");
     async function fetchFollowing() {
       try {
@@ -131,7 +115,6 @@ function PublicUserProfile() {
         );
         if (response.data?.data) {
           const newCount = response.data.data.length;
-          // Update the following count only if it has changed.
           if (profile.followingCount !== newCount) {
             setProfile((prevProfile) => ({
               ...prevProfile,
@@ -147,9 +130,6 @@ function PublicUserProfile() {
     fetchFollowing();
   }, [profile?._id]);
 
-  /**
-   * Toggle follow/unfollow for the user.
-   */
   const toggleFollow = async () => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -165,7 +145,6 @@ function PublicUserProfile() {
 
     setUpdatingFollow(true);
 
-    // Prepare the payload and determine the endpoint based on the current follow state.
     const payload = {
       followerId: currentUserId,
       followingId: profile._id,
@@ -178,7 +157,6 @@ function PublicUserProfile() {
       await axios.post(endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // After a successful follow/unfollow, refresh follow state.
       updateFollowState();
     } catch (err) {
       console.error("Error updating follow status:", err);
@@ -191,7 +169,6 @@ function PublicUserProfile() {
         errorMessage = errorData.error;
       }
 
-      // If the error indicates "already following", update the state to reflect that.
       if (errorMessage.toLowerCase().includes("already following")) {
         updateFollowState();
       } else {
@@ -202,14 +179,11 @@ function PublicUserProfile() {
     }
   };
 
-  // Display loading or error states if applicable
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
-  // Render profile and posts
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden p-6">
-      {/* Cover Image */}
       {profile.coverImage && (
         <div
           className="w-full h-48 bg-cover bg-center rounded-t-lg"
@@ -217,7 +191,6 @@ function PublicUserProfile() {
         ></div>
       )}
 
-      {/* Profile Header */}
       <div className="flex items-center space-x-6 p-6">
         {profile.avatar && (
           <img
@@ -245,7 +218,6 @@ function PublicUserProfile() {
         </button>
       </div>
 
-      {/* User Posts Section */}
       <div className="mt-6">
         <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
           User Posts
