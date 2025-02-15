@@ -23,6 +23,7 @@ import {
   FaCalendarAlt,
   FaTags,
   FaThumbsUp,
+  FaCheck,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -38,7 +39,6 @@ function PostDetail() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
   const [showComments, setShowComments] = useState(false);
-  const [likedComments, setLikedComments] = useState({});
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [estimatedReadTime] = useState(
     Math.ceil(post?.content?.length / 1000) || 5
@@ -54,6 +54,9 @@ function PostDetail() {
 
   // New state for showing interactivity during the comment API call
   const [isAddingComment, setIsAddingComment] = useState(false);
+
+  // At the beginning of your PostDetail component, add the state:
+  const [hasCopied, setHasCopied] = useState(false);
 
   // Updated fetchComments to display the most recent comments first
   const fetchComments = async (forceUpdate = false) => {
@@ -525,59 +528,137 @@ function PostDetail() {
     }
   };
 
+  // Updated helper function to check if the comment is liked by current user,
+  // handling both object and string types.
+  const isCommentLikedByCurrentUser = (comment) => {
+    if (!currentUser || !comment.likes) return false;
+    return comment.likes.some((like) => {
+      if (typeof like === "string") return like === currentUser._id;
+      const likeUserId = like?.userId?._id || like?.userId;
+      return likeUserId === currentUser._id;
+    });
+  };
+
+  // Helper functions for liking and unliking a comment
   const likeComment = async (commentId) => {
     const token = localStorage.getItem("accessToken");
+    if (!token) {
+      toast.error("Please login to like comments");
+      return;
+    }
     try {
       const response = await axios.post(
         `https://bg-io.vercel.app/api/v1/interactions/likes/comment/${commentId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { commentId },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.data.success) {
-        toast.success("Comment liked successfully!");
-        fetchComments(); // Refresh comments to update likes count
-      } else {
-        toast.error(response.data.message || "Failed to like comment");
-      }
+      return response;
     } catch (error) {
-      console.error("Error liking comment:", error);
-      toast.error("Error liking comment");
+      throw error;
     }
   };
 
   const unlikeComment = async (commentId) => {
     const token = localStorage.getItem("accessToken");
+    if (!token) {
+      toast.error("Please login to unlike comments");
+      return;
+    }
     try {
       const response = await axios.delete(
         `https://bg-io.vercel.app/api/v1/interactions/likes/comment/${commentId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.data.success) {
-        toast.success("Comment unliked successfully!");
-        fetchComments(); // Refresh comments to update likes count
-      } else {
-        toast.error(response.data.message || "Failed to unlike comment");
-      }
+      return response;
     } catch (error) {
-      console.error("Error unliking comment:", error);
-      toast.error("Error unliking comment");
+      throw error;
     }
   };
 
+  // Updated toggleLikeComment function, now mimicking the post like logic.
+  // This function updates local state (and the cache) immediately so that
+  // the icon color (blue when liked) is in sync.
   const toggleLikeComment = async (commentId) => {
-    const token = localStorage.getItem("accessToken");
-    if (likedComments[commentId]) {
-      await unlikeComment(commentId);
-      setLikedComments((prev) => ({ ...prev, [commentId]: false }));
+    if (!currentUser) {
+      toast.error("Please login to like comments");
+      return;
+    }
+
+    // Find the comment from the current list
+    const comment = comments.find((c) => c._id === commentId);
+    if (!comment) return;
+
+    const alreadyLiked = isCommentLikedByCurrentUser(comment);
+
+    // Helper to update both local state and the commentsCache for the current post.
+    const updateCommentsState = (updatedComments) => {
+      setComments(updatedComments);
+      if (post?._id) {
+        setCommentsCache((prev) => ({ ...prev, [post._id]: updatedComments }));
+      }
+    };
+
+    if (alreadyLiked) {
+      // Unlike the comment
+      try {
+        await unlikeComment(commentId);
+        const updatedComments = comments.map((c) => {
+          if (c._id === commentId) {
+            const newLikes = c.likes.filter((like) => {
+              if (typeof like === "string") return like !== currentUser._id;
+              const likeUserId = like?.userId?._id || like?.userId;
+              return likeUserId !== currentUser._id;
+            });
+            return { ...c, likes: newLikes };
+          }
+          return c;
+        });
+        updateCommentsState(updatedComments);
+      } catch (error) {
+        console.error("Error unliking comment:", error);
+        toast.error(error.response?.data?.message || "Error unliking comment");
+      }
     } else {
-      await likeComment(commentId);
-      setLikedComments((prev) => ({ ...prev, [commentId]: true }));
+      // Like the comment
+      try {
+        await likeComment(commentId);
+        const updatedComments = comments.map((c) => {
+          if (c._id === commentId) {
+            // Only add currentUser if not already present.
+            if (!isCommentLikedByCurrentUser(c)) {
+              return {
+                ...c,
+                likes: [...(c.likes || []), { userId: currentUser }],
+              };
+            }
+          }
+          return c;
+        });
+        updateCommentsState(updatedComments);
+      } catch (error) {
+        // If error indicates the comment is already liked, update the UI accordingly.
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message === "You have already liked this item."
+        ) {
+          const updatedComments = comments.map((c) => {
+            if (c._id === commentId) {
+              if (!isCommentLikedByCurrentUser(c)) {
+                return {
+                  ...c,
+                  likes: [...(c.likes || []), { userId: currentUser }],
+                };
+              }
+            }
+            return c;
+          });
+          updateCommentsState(updatedComments);
+        } else {
+          console.error("Error liking comment:", error);
+          toast.error(error.response?.data?.message || "Error liking comment");
+        }
+      }
     }
   };
 
@@ -608,9 +689,20 @@ function PostDetail() {
     )}&title=${encodeURIComponent(shareTitle)}`,
   };
 
+  // Updated copyToClipboard function with state feedback
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareUrl);
-    toast.success("Link copied to clipboard!");
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        toast.success("Link copied to clipboard!");
+        setHasCopied(true);
+        setTimeout(() => {
+          setHasCopied(false);
+        }, 2000); // 2000ms = 2 seconds before reverting back
+      })
+      .catch(() => {
+        toast.error("Failed to copy the link.");
+      });
   };
 
   const handleReply = async (commentId) => {
@@ -901,8 +993,12 @@ function PostDetail() {
                       onClick={copyToClipboard}
                       className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
-                      <FaLink className="text-gray-600" />
-                      <span>Copy Link</span>
+                      {hasCopied ? (
+                        <FaCheck className="text-green-600" />
+                      ) : (
+                        <FaLink className="text-gray-600" />
+                      )}
+                      <span>{hasCopied ? "Copied!" : "Copy Link"}</span>
                     </button>
                   </div>
                 </motion.div>
@@ -966,11 +1062,11 @@ function PostDetail() {
                             </span>
                           </div>
                           <div className="flex items-center gap-4">
-                            {/* Like and Reply buttons */}
+                            {/* Updated Like Button */}
                             <button
                               onClick={() => toggleLikeComment(comment._id)}
                               className={`flex items-center gap-1 text-sm px-2 py-1 rounded-full transition-colors ${
-                                likedComments[comment._id]
+                                isCommentLikedByCurrentUser(comment)
                                   ? "text-blue-600 bg-blue-50"
                                   : "text-gray-500 hover:bg-gray-100"
                               }`}
