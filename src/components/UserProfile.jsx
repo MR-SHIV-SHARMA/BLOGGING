@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { FaTrash, FaEdit } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 function UserProfileCard() {
   const [profile, setProfile] = useState(null);
@@ -176,9 +178,13 @@ function UserProfileCard() {
     if (!newBookmarkName) return;
 
     try {
-      const response = await axios.post("https://bg-io.vercel.app/api/v1/interactions/bookmarks/", { name: newBookmarkName }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.post(
+        "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
+        { name: newBookmarkName },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.data.success) {
         toast.success("Bookmark created successfully!");
         fetchBookmarks();
@@ -193,9 +199,12 @@ function UserProfileCard() {
   const fetchBookmarks = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.get("https://bg-io.vercel.app/api/v1/interactions/bookmarks/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.data.success) {
         setBookmarks(response.data.data || []);
       } else {
@@ -236,13 +245,18 @@ function UserProfileCard() {
   const deletePostFromBookmark = async (bookmarkId, postId) => {
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.delete(`https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.delete(
+        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts/${postId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.data.success) {
         toast.success("Post removed from bookmark successfully!");
       } else {
-        toast.error(response.data.message || "Failed to remove post from bookmark");
+        toast.error(
+          response.data.message || "Failed to remove post from bookmark"
+        );
       }
     } catch {
       toast.error("Error removing post from bookmark");
@@ -251,19 +265,24 @@ function UserProfileCard() {
 
   const deleteBookmark = async (bookmarkId) => {
     const token = localStorage.getItem("accessToken");
-    const postId = deleteBookmark
+    const postId = deleteBookmark;
     if (!postId) return;
 
     try {
-      const response = await axios.delete(`https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}`, {
-        data: { postId },
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.delete(
+        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}`,
+        {
+          data: { postId },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.data.success) {
         toast.success("Post removed from bookmark successfully!");
         fetchBookmarks();
       } else {
-        toast.error(response.data.message || "Failed to remove post from bookmark");
+        toast.error(
+          response.data.message || "Failed to remove post from bookmark"
+        );
       }
     } catch {
       toast.error("Error removing post from bookmark");
@@ -273,9 +292,12 @@ function UserProfileCard() {
   const deletePost = async (postId) => {
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.delete(`https://bg-io.vercel.app/api/v1/content/posts/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.delete(
+        `https://bg-io.vercel.app/api/v1/content/posts/${postId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.data.success) {
         toast.success("Post deleted successfully!");
         await fetchUserPosts();
@@ -292,9 +314,12 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     setIsLoadingPosts(true);
     try {
-      const response = await axios.get("https://bg-io.vercel.app/api/v1/content/posts/user/posts", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "https://bg-io.vercel.app/api/v1/content/posts/user/posts",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.data.success) {
         setUserPosts(response.data.data || []);
       } else {
@@ -312,10 +337,12 @@ function UserProfileCard() {
     fetchBookmarks();
   }, []);
 
+  const editPost = (postId) => {
+    toast.info("Edit functionality is not implemented yet.");
+  };
+
   return (
     <div className="max-w-8xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden relative p-4 sm:p-6 md:p-8">
-
-
       {/* Cover Image Section */}
       <div className="h-60 sm:h-72 md:h-80 w-full bg-gradient-to-r from-indigo-500 to-purple-600 relative rounded-lg overflow-hidden">
         {profile?.coverImage && (
@@ -493,13 +520,17 @@ function UserProfileCard() {
       <div className="flex space-x-4 mb-4">
         <button
           onClick={() => setActiveTab("posts")}
-          className={`py-2 px-4 rounded-lg ${activeTab === "posts" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          className={`py-2 px-4 rounded-lg ${
+            activeTab === "posts" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
         >
           User Posts
         </button>
         <button
           onClick={() => setActiveTab("bookmarks")}
-          className={`py-2 px-4 rounded-lg ${activeTab === "bookmarks" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          className={`py-2 px-4 rounded-lg ${
+            activeTab === "bookmarks" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
         >
           Bookmarks
         </button>
@@ -517,65 +548,59 @@ function UserProfileCard() {
                 userPosts.map((post) => (
                   <div
                     key={post._id}
-                    className="p-5 bg-white rounded-xl shadow-md border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.03] flex flex-col justify-between"
+                    className="bg-white rounded-xl shadow-md border border-gray-200 transition transform hover:scale-105 hover:shadow-xl flex flex-col justify-between"
                   >
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-800">
-                        {post.title}
-                      </h3>
-                      <p className="text-gray-700 mb-3 line-clamp-2">
-                        {post.content}
-                      </p>
+                    <Link to={`/post/${post._id}`} className="block">
+                      <div className="p-5">
+                        {post.media && (
+                          <div className="mb-4 w-full h-48 overflow-hidden rounded-lg">
+                            <img
+                              src={post.media}
+                              alt="media"
+                              className="w-full h-full object-cover transition duration-300 hover:opacity-80"
+                            />
+                          </div>
+                        )}
+                        <h3 className="text-lg font-bold text-gray-800 mb-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-gray-700 mb-4 line-clamp-2">
+                          {post.content}
+                        </p>
+                      </div>
+                    </Link>
 
-                      {post.media && (
-                        <div className="w-full h-48 overflow-hidden rounded-lg">
-                          <img
-                            src={post.media}
-                            alt="media"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between items-center mt-4 text-gray-600 text-sm border-t pt-3">
-                      <span>❤️ {post.likes.length}</span>
-                      <span>💬 {post.comments.length}</span>
-                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                    </div>
-
-                    {/* Add Post to Bookmark Button */}
-                    <div className="mt-4">
-                      <select
-                        onChange={(e) => setSelectedBookmarkId(e.target.value)} // Set selected bookmark ID
-                        className="border rounded-md px-2 py-1 mr-2"
-                      >
-                        <option value="">Select Bookmark</option>
-                        {bookmarks.map((bookmark) => (
-                          <option key={bookmark._id} value={bookmark._id}>
-                            {bookmark.name || "Untitled Bookmark"}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => addPostToBookmark(selectedBookmarkId, post._id)} // Add post to selected bookmark
-                        className="bg-green-500 text-white py-1 px-2 rounded hover:bg-green-600"
-                        disabled={!selectedBookmarkId} // Disable if no bookmark is selected
-                      >
-                        Add Post
-                      </button>
-                      {/* Delete Post Button */}
-                      <button
-                        onClick={() => deletePost(post._id)} // Call deletePost function
-                        className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600 ml-2"
-                      >
-                        Delete Post
-                      </button>
+                    <div className="p-5 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-gray-600 text-sm">
+                        <span>❤️ {post.likes.length}</span>
+                        <span>💬 {post.comments.length}</span>
+                        <span>
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => editPost(post._id)}
+                          title="Edit Post"
+                          className="w-full bg-blue-500 text-white rounded-md py-2 hover:bg-blue-600 transition flex items-center justify-center"
+                        >
+                          <FaEdit size={18} />
+                        </button>
+                        <button
+                          onClick={() => deletePost(post._id)}
+                          title="Delete Post"
+                          className="w-full bg-red-500 text-white rounded-md py-2 hover:bg-red-600 transition flex items-center justify-center"
+                        >
+                          <FaTrash size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 col-span-full text-center">No posts available</p>
+                <p className="text-gray-500 col-span-full text-center">
+                  No posts available
+                </p>
               )}
             </div>
           )}
@@ -601,8 +626,13 @@ function UserProfileCard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {bookmarks.length > 0 ? (
               bookmarks.map((bookmark) => (
-                <div key={bookmark._id} className="p-4 bg-white rounded-lg shadow-md transition-transform transform hover:scale-105">
-                  <h3 className="font-bold text-lg mb-2">{bookmark.name || "Untitled Bookmark"}</h3>
+                <div
+                  key={bookmark._id}
+                  className="p-4 bg-white rounded-lg shadow-md transition-transform transform hover:scale-105"
+                >
+                  <h3 className="font-bold text-lg mb-2">
+                    {bookmark.name || "Untitled Bookmark"}
+                  </h3>
                   <div className="flex justify-between items-center mb-2">
                     <button
                       onClick={() => deleteBookmark(bookmark._id)} // Call deleteBookmark function
@@ -613,17 +643,24 @@ function UserProfileCard() {
                   </div>
                   <ul className="list-disc pl-5">
                     {bookmark.posts.map((post) => (
-                      <li key={post._id} className="flex flex-col bg-gray-50 p-3 rounded-lg shadow-sm mb-2">
+                      <li
+                        key={post._id}
+                        className="flex flex-col bg-gray-50 p-3 rounded-lg shadow-sm mb-2"
+                      >
                         <div className="flex justify-between items-center">
                           <span className="font-bold">{post.title}</span>
                           <button
-                            onClick={() => deletePostFromBookmark(bookmark._id, post._id)}
+                            onClick={() =>
+                              deletePostFromBookmark(bookmark._id, post._id)
+                            }
                             className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600"
                           >
                             Remove
                           </button>
                         </div>
-                        <p className="text-gray-700 mb-2 line-clamp-2">{post.content}</p>
+                        <p className="text-gray-700 mb-2 line-clamp-2">
+                          {post.content}
+                        </p>
 
                         {post.media && (
                           <div className="w-full h-48 overflow-hidden rounded-lg mb-2">
@@ -640,7 +677,9 @@ function UserProfileCard() {
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center col-span-full">No bookmarks available</p>
+              <p className="text-gray-500 text-center col-span-full">
+                No bookmarks available
+              </p>
             )}
           </div>
         </div>
