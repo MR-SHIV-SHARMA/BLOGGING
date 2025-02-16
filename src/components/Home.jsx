@@ -19,7 +19,7 @@ function Home() {
 
       try {
         const { data } = await axios.get(
-          `http://localhost:3000/api/v1/content/posts?page=${page}&limit=${POSTS_PER_PAGE}`
+          `https://bg-io.vercel.app/api/v1/content/posts?page=${page}&limit=${POSTS_PER_PAGE}`
         );
 
         if (data?.success) {
