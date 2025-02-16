@@ -56,10 +56,17 @@ function Home() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 py-10">
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 py-10 font-poppins">
+      {/* Add Google Fonts in your global CSS or index.html */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-700/50 to-purple-700/50"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
           <h1 className="text-5xl font-bold mb-4 animate-fade-in">
             Welcome to the Blog
           </h1>
@@ -84,10 +91,20 @@ function Home() {
         </div>
 
         {loading && (
-          <div className="text-center py-6">
-            <p className="text-lg text-blue-500 animate-pulse">
-              Loading posts...
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-white/50 backdrop-blur-lg shadow-lg rounded-lg overflow-hidden animate-pulse"
+              >
+                <div className="w-full h-64 bg-gray-200"></div>
+                <div className="p-6">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -113,7 +130,7 @@ function Home() {
       {showScrollButton && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+          className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 animate-bounce"
         >
           <FaArrowUp className="text-xl" />
         </button>
@@ -125,7 +142,10 @@ function Home() {
 function PostCard({ post }) {
   return (
     <Link to={`/post/${post._id}`} className="block">
-      <div className="bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+      <div className="bg-white/50 backdrop-blur-lg shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative group">
+        {/* Gradient Border Effect */}
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-200 to-purple-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+
         {post.media && (
           <img
             src={post.media}

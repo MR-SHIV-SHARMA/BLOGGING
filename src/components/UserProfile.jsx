@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { FaTrash, FaEdit } from "react-icons/fa";
+import {
+  FaTrash,
+  FaEdit,
+  FaUser,
+  FaHeart,
+  FaComment,
+  FaArrowUp,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 function UserProfileCard() {
@@ -21,15 +28,10 @@ function UserProfileCard() {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [bookmarks, setBookmarks] = useState([]);
   const [newBookmarkName, setNewBookmarkName] = useState("");
-  const [selectedBookmarkId, setSelectedBookmarkId] = useState("");
-
-  // NEW: State for editing a post and updating its media file
-  const [editingPost, setEditingPost] = useState(null);
-  const [editingMediaFile, setEditingMediaFile] = useState(null);
-
-  // NEW: State for followers and following counts, separately maintained.
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editingMediaFile, setEditingMediaFile] = useState(null);
 
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
@@ -44,24 +46,48 @@ function UserProfileCard() {
       .then((response) => {
         const data = response.data;
         if (data.success) {
-          setProfile(data.data);
-          setFullname(data.data.fullname || "");
-          setBio(data.data.bio || "");
-          setLocation(data.data.location || "");
-          setHobbies(data.data.hobbies || []);
-          setLink(data.data.link || "");
-          setSocialMedia(data.data.socialMedia || "");
+          const profileData = data.data || {};
+          if (!profileData || Object.keys(profileData).length === 0) {
+            toast.info("Profile not created yet. Please update your profile.");
+          }
+          setProfile(profileData);
+          setFullname(profileData.fullname || "");
+          setBio(profileData.bio || "");
+          setLocation(profileData.location || "");
+          setHobbies(profileData.hobbies || []);
+          setLink(profileData.link || "");
+          setSocialMedia(profileData.socialMedia || "");
         } else {
-          toast.error(data.message || "Failed to fetch profile");
+          const lowerMsg = data.message ? data.message.toLowerCase() : "";
+          if (
+            lowerMsg.includes("not found") ||
+            lowerMsg.includes("not exist")
+          ) {
+            toast.info("Profile not created yet. Please update your profile.");
+            setProfile({});
+          } else {
+            toast.error(data.message || "Failed to fetch profile");
+          }
         }
       })
-      .catch(() => toast.error("Error fetching user profile"));
+      .catch((error) => {
+        const errMsg =
+          error.response?.data?.message?.toLowerCase() || error.message || "";
+        if (
+          error.response?.status === 404 ||
+          errMsg.includes("not found") ||
+          errMsg.includes("no profile")
+        ) {
+          setProfile({});
+          toast.info("Profile not created yet. Please update your profile.");
+        } else {
+          console.error("Error fetching profile:", error);
+        }
+      });
   }, []);
 
-  // NEW: Fetch both followers and following counts using Promise.all once profile is available.
   useEffect(() => {
     if (!profile?._id) return;
-    console.log("profile " + profile?._id);
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId");
 
@@ -79,8 +105,6 @@ function UserProfileCard() {
         ]);
         setFollowersCount(followersResponse.data?.data?.length || 0);
         setFollowingCount(followingResponse.data?.data?.length || 0);
-        console.log("followersCount " + followersCount);
-        console.log("followingCount " + followingCount);
       } catch (err) {
         console.error("Error fetching follow counts: ", err);
       }
@@ -205,9 +229,21 @@ function UserProfileCard() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        setUserPosts(response.data.data || []);
+        const data = response.data;
+        if (data.success) {
+          setUserPosts(data.data || []);
+        } else {
+          setUserPosts([]);
+          toast.info(data.message || "No posts available");
+        }
       })
-      .catch(() => toast.error("Error fetching user posts"))
+      .catch((error) => {
+        if (error.response && error.response.status === 404) {
+          setUserPosts([]);
+        } else {
+          toast.error("Error fetching user posts");
+        }
+      })
       .finally(() => setIsLoadingPosts(false));
   }, []);
 
@@ -375,14 +411,11 @@ function UserProfileCard() {
     fetchBookmarks();
   }, []);
 
-  // NEW: Updated editPost to open the editing modal with the full post object
-  // and reset the editing media file state.
   const editPost = (post) => {
     setEditingPost(post);
     setEditingMediaFile(null);
   };
 
-  // NEW: Function to update the post using PATCH and sending a file for media.
   const updatePost = async () => {
     const token = localStorage.getItem("accessToken");
     const formData = new FormData();
@@ -420,12 +453,14 @@ function UserProfileCard() {
     <div className="max-w-8xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden relative p-4 sm:p-6 md:p-8">
       {/* Cover Image Section */}
       <div className="h-60 sm:h-72 md:h-80 w-full bg-gradient-to-r from-indigo-500 to-purple-600 relative rounded-lg overflow-hidden">
-        {profile?.coverImage && (
+        {profile?.coverImage ? (
           <img
             src={profile.coverImage}
             alt="Cover"
             className="w-full h-full object-cover opacity-90"
           />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-indigo-400 to-purple-500"></div>
         )}
 
         <div
@@ -472,9 +507,8 @@ function UserProfileCard() {
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-bold mt-4 text-gray-900">
-          {profile?.username}
+          {profile?.username || "Anonymous"}
         </h2>
-        {/* Displaying the fetched counts for followers and following */}
         <div className="flex justify-center gap-4">
           <h1>Followers: {followersCount}</h1>
           <h1>Following: {followingCount}</h1>

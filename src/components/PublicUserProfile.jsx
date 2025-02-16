@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 function PublicUserProfile() {
   const { userId } = useParams();
@@ -21,11 +22,28 @@ function PublicUserProfile() {
           `https://bg-io.vercel.app/api/v1/user/profile/view/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (response.data?.data) {
-          setData(response.data.data);
+        const profileData = response.data?.data;
+        if (profileData && Object.keys(profileData).length > 0) {
+          setData(profileData);
+        } else {
+          toast.info("Profile not created yet. Please update your profile.");
+          setData({});
         }
       } catch (err) {
-        setError("Error fetching profile data.");
+        const errMsg =
+          err.response?.data?.message?.toLowerCase() || err.message || "";
+        if (
+          err.response?.status === 404 ||
+          errMsg.includes("not found") ||
+          errMsg.includes("no profile")
+        ) {
+          toast.info("Profile not created yet. Please update your profile.");
+          setData({});
+        } else {
+          console.error("Error fetching profile data:", err);
+          // Optionally, comment the next line out if you don't want the error toast.
+          // toast.error("Error fetching profile data.");
+        }
       }
     }
     fetchUserProfile();
