@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { FaSpinner } from "react-icons/fa"; // For loading spinner
 
 function AddPost() {
   const [title, setTitle] = useState("");
@@ -12,7 +13,7 @@ function AddPost() {
   const [tagInput, setTagInput] = useState("");
   const [filteredTags, setFilteredTags] = useState([]);
   const [categoryId, setCategoryId] = useState("");
-  const [tagId, setTagId] = useState("");
+  const [selectedTags, setSelectedTags] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,23 +58,18 @@ function AddPost() {
   };
 
   const handleTagClick = (tag) => {
-    // Set the tag ID and update the input field with the tag name
-    setTagId(tag._id); // Set the selected tag ID
-    setTagInput(`#${tag.name}`); // Update the input field with the tag name prefixed by '#'
-    setSelectedTags((prevTags) => [...prevTags, tag._id]); // Add tag ID to selected tags
-    setFilteredTags([]); // Clear suggestions after selection
+    setSelectedTags((prevTags) => [...prevTags, tag._id]);
+    setTagInput("");
+    setFilteredTags([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title || !content || !categoryId) {
-      setMessage("Title, content, and category are required!");
-      return;
-    }
-
-    if (!tagId) {
-      setMessage("At least one tag is required!");
+    if (!title || !content || !categoryId || selectedTags.length === 0) {
+      setMessage(
+        "Title, content, category, and at least one tag are required!"
+      );
       return;
     }
 
@@ -81,12 +77,8 @@ function AddPost() {
     formData.append("title", title);
     formData.append("content", content);
     if (media) formData.append("media", media);
-
-    const categoriesToSubmit = [categoryId];
-    const tagsToSubmit = [tagId];
-
-    formData.append("categoryId", categoriesToSubmit);
-    formData.append("tagId", tagsToSubmit);
+    formData.append("categoryId", categoryId);
+    selectedTags.forEach((tagId) => formData.append("tagId", tagId));
 
     try {
       setLoading(true);
@@ -110,8 +102,8 @@ function AddPost() {
         setContent("");
         setMedia(null);
         setCategoryId("");
-        setTagId("");
-        setTagInput(""); // Clear the tag input after successful submission
+        setSelectedTags([]);
+        setTagInput("");
       } else {
         setMessage(response.data.message || "Something went wrong!");
       }
@@ -124,9 +116,9 @@ function AddPost() {
   };
 
   return (
-    <div className="py-8 px-4 bg-gray-50 min-h-screen flex items-center justify-center">
-      <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-2xl mx-4">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800 text-center">
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 sm:p-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-6">
           Create a New Post
         </h2>
 
@@ -149,65 +141,89 @@ function AddPost() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-4 py-2.5 border rounded-lg"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
           />
+
           <textarea
             placeholder="Write your post content..."
             rows="5"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
-            className="w-full px-4 py-2.5 border rounded-lg"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
           />
 
-          <div>
-            <select
-              className="w-full px-4 py-2.5 border rounded-lg"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            required
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+          >
+            <option value="">Select Category</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
 
-          <div>
+          <div className="relative">
             <input
               type="text"
               placeholder="Search tags (use #)..."
               value={tagInput}
               onChange={handleTagInputChange}
-              className="w-full px-4 py-2.5 border rounded-lg"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
             />
-            <ul className="border rounded-lg mt-2">
-              {filteredTags.map((tag) => (
-                <li
-                  key={tag._id}
-                  className="p-2 cursor-pointer hover:bg-gray-200"
-                  onClick={() => handleTagClick(tag)}
+            {filteredTags.length > 0 && (
+              <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg">
+                {filteredTags.map((tag) => (
+                  <li
+                    key={tag._id}
+                    className="p-2 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleTagClick(tag)}
+                  >
+                    {tag.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {selectedTags.map((tagId) => {
+              const tag = tags.find((t) => t._id === tagId);
+              return (
+                <span
+                  key={tagId}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                 >
-                  {tag.name}
-                </li>
-              ))}
-            </ul>
+                  {tag?.name}
+                </span>
+              );
+            })}
           </div>
 
           <input
             type="file"
             accept="image/*,video/*"
             onChange={(e) => setMedia(e.target.files[0])}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
           />
 
           <button
             type="submit"
-            className="w-full py-3 bg-indigo-600 text-white rounded-lg"
             disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300"
           >
-            {loading ? "Posting..." : "Create Post"}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <FaSpinner className="animate-spin h-5 w-5 mr-2" />
+                Posting...
+              </div>
+            ) : (
+              "Create Post"
+            )}
           </button>
         </form>
       </div>

@@ -221,39 +221,39 @@ function PublicUserProfile() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto my-8 bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="max-w-6xl mx-auto my-8 bg-white/80 backdrop-blur-lg rounded-xl shadow-2xl overflow-hidden">
       {data?.coverImage && (
-        <div className="relative">
+        <div className="relative h-48 md:h-64">
           <img
             src={data.coverImage}
             alt="Cover"
-            className="w-full h-48 object-cover"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black opacity-25"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
         </div>
       )}
 
       <div className="p-6">
-        <div className="relative flex items-center">
-          <div className="absolute -top-16">
+        <div className="relative flex flex-col md:flex-row items-center md:items-start">
+          <div className="absolute -top-20 md:-top-24">
             {data?.avatar ? (
               <img
                 src={data.avatar}
                 alt={`${data.name}'s avatar`}
-                className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
+                className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-lg"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-300 flex justify-center items-center text-2xl text-white">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-lg bg-gradient-to-r from-blue-500 to-purple-500 flex justify-center items-center text-2xl text-white">
                 {data?.name ? data.name.charAt(0) : "U"}
               </div>
             )}
           </div>
-          <div className="ml-40">
+          <div className="mt-20 md:mt-0 md:ml-40 text-center md:text-left">
             <h1 className="text-3xl font-bold text-gray-900">
               {profile?.name || data?.username || "User"}
             </h1>
             <p className="text-gray-600 mt-1">Email: {profile?.email}</p>
-            <div className="flex space-x-6 mt-2">
+            <div className="flex space-x-6 mt-2 justify-center md:justify-start">
               <p className="text-gray-700">
                 <strong>Followers:</strong> {profile?.followersCount || 0}
               </p>
@@ -265,7 +265,7 @@ function PublicUserProfile() {
           <button
             onClick={toggleFollow}
             disabled={updatingFollow}
-            className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-full shadow hover:bg-blue-700 transition-all disabled:opacity-50"
+            className="mt-4 md:mt-0 md:ml-auto px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
           >
             {updatingFollow
               ? "Processing..."
@@ -275,7 +275,7 @@ function PublicUserProfile() {
           </button>
         </div>
 
-        <div className="mt-20 border-t pt-6">
+        <div className="mt-20 border-t border-gray-200 pt-6">
           <div className="mb-6">
             {data?.bio && (
               <p className="text-gray-700">
@@ -312,7 +312,7 @@ function PublicUserProfile() {
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">
+            <h2 className="text-2xl font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-4">
               User Posts ({posts.length})
             </h2>
             {postsLoading ? (
@@ -320,11 +320,11 @@ function PublicUserProfile() {
             ) : postsError ? (
               <p className="text-center text-red-500">{postsError}</p>
             ) : posts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {posts.map((post) => (
                   <div
                     key={post._id}
-                    className="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                    className="bg-white/80 backdrop-blur-lg p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
                   >
                     {post.media && (
                       <img

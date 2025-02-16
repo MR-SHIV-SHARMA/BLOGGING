@@ -40,69 +40,84 @@ function Signup() {
   };
 
   return (
-    <div className="flex items-center justify-center w-full py-12 px-4 bg-gray-200">
-      <div className="mx-auto w-full max-w-lg bg-white rounded-xl p-6 border border-gray-300 shadow-md">
-        <div className="mb-3 flex justify-center">
-          <span className="inline-block w-full max-w-[100px]">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 p-4">
+      <div className="w-full max-w-lg bg-white/70 backdrop-blur-lg rounded-xl p-8 border border-white/20 shadow-2xl hover:shadow-3xl transition-shadow duration-300">
+        <div className="mb-6 flex justify-center">
+          <span className="inline-block w-24">
             <img
               src="/NextGen-Thinkers-Logo.png"
               alt="NextGen Thinkers Logo"
-              width="100%"
+              className="w-full"
             />
           </span>
         </div>
-        <h2 className="text-center text-2xl font-bold leading-tight text-gray-800">
-          Sign up to create an account
+        <h2 className="text-center text-3xl font-bold text-gray-800 mb-2">
+          Create Your Account
         </h2>
-        <p className="mt-1 text-center text-base text-gray-600">
-          Already have an account?&nbsp;
-          <Link
-            to="/login"
-            className="font-medium text-blue-600 transition-all duration-200 hover:underline"
-          >
-            Sign In
-          </Link>
+        <p className="text-center text-gray-600 mb-6">
+          Join us to start your journey.
         </p>
-        {error && <p className="text-red-600 mt-2 text-center">{error}</p>}
-        <form onSubmit={onSignup} className="mt-4">
-          <div className="space-y-4">
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md mb-4 text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={onSignup} className="space-y-6">
+          <div>
             <input
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="Enter your full name"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
+          </div>
+          <div>
             <input
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="Enter your email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            <div className="relative">
-              <input
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <span
-                className="absolute top-3 right-3 flex items-center cursor-pointer"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FaEye /> : <FaEyeSlash />}
-              </span>
-            </div>
-            <button
-              type="submit"
-              className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={buttonDisabled || loading}
-            >
-              {loading ? "Loading..." : "Sign up"}
-            </button>
           </div>
+          <div className="relative">
+            <input
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span
+              className="absolute top-3 right-3 flex items-center cursor-pointer text-gray-500 hover:text-gray-700 transition-all"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
+          <button
+            type="submit"
+            className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={buttonDisabled || loading}
+          >
+            {loading ? "Creating account..." : "Sign up"}
+          </button>
         </form>
+
+        <p className="text-center text-gray-600 mt-6">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-blue-600 hover:text-blue-700 font-semibold transition-all duration-300"
+          >
+            Sign In
+          </Link>
+        </p>
       </div>
     </div>
   );

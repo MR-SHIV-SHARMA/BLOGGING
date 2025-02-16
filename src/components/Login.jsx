@@ -77,107 +77,119 @@ function Login() {
     }
   };
 
-  const currentUserId = localStorage.getItem("userId");
-
   return (
-    <div className="flex items-center justify-center w-full py-12 px-4 bg-gray-200">
-      <div className="mx-auto w-full max-w-md bg-white rounded-xl p-10 border border-gray-300 shadow-md">
-        <div className="mb-4 flex justify-center">
-          <span className="inline-block w-full max-w-[100px]">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 p-4">
+      <div className="w-full max-w-md bg-white/70 backdrop-blur-lg rounded-xl p-8 border border-white/20 shadow-2xl hover:shadow-3xl transition-shadow duration-300">
+        <div className="mb-6 flex justify-center">
+          <span className="inline-block w-24">
             <img
               src="/NextGen-Thinkers-Logo.png"
               alt="NextGen Thinkers Logo"
-              width="100%"
+              className="w-full"
             />
           </span>
         </div>
-        <h2 className="text-center text-2xl font-bold leading-tight text-gray-800">
-          Sign in to your account
+        <h2 className="text-center text-3xl font-bold text-gray-800 mb-2">
+          Welcome Back!
         </h2>
-        <p className="mt-2 text-center text-base text-gray-600">
-          Don&apos;t have an account?&nbsp;
-          <Link
-            to="/signup"
-            className="font-medium text-blue-600 transition-all duration-200 hover:underline"
-          >
-            Sign Up
-          </Link>
+        <p className="text-center text-gray-600 mb-6">
+          Sign in to continue to your account.
         </p>
-        {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md mb-4 text-center">
+            {error}
+          </div>
+        )}
+
         {!showForgotPassword ? (
-          <form onSubmit={handleLoginSubmit} className="mt-8">
-            <div className="space-y-5">
+          <form onSubmit={handleLoginSubmit} className="space-y-6">
+            <div>
               <input
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your email or username"
-                type="text"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter your email"
+                type="email"
                 name="email"
                 value={email}
                 onChange={handleInputChange}
+                required
               />
-
+            </div>
+            <div>
               <input
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 type="password"
                 placeholder="Enter your password"
                 name="password"
                 value={password}
                 onChange={handleInputChange}
+                required
               />
-
-              <button
-                type="submit"
-                className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
             </div>
+            <button
+              type="submit"
+              className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
             <button
               onClick={(e) => {
                 e.preventDefault();
                 setShowForgotPassword(true);
                 setForgotEmail(email);
               }}
-              className="w-full px-4 py-2 font-semibold text-blue-600 rounded-md transition duration-200 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
+              className="w-full text-center text-blue-600 hover:text-blue-700 transition-all duration-300"
             >
               Forgot Password?
             </button>
           </form>
         ) : (
-          <form onSubmit={handleForgotPassword} className="mt-8">
-            <div className="space-y-5">
+          <form onSubmit={handleForgotPassword} className="space-y-6">
+            <div>
               <input
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Enter your email"
                 type="email"
                 name="forgotEmail"
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
+                required
               />
-
-              <button
-                type="submit"
-                className="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-md transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Send Reset Link
-              </button>
             </div>
+            <button
+              type="submit"
+              className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Send Reset Link
+            </button>
             <button
               onClick={(e) => {
                 e.preventDefault();
                 setShowForgotPassword(false);
               }}
-              className="w-full px-4 py-2 font-semibold text-blue-600 rounded-md transition duration-200 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-center text-blue-600 hover:text-blue-700 transition-all duration-300"
             >
               Back to Login
             </button>
           </form>
         )}
+
         {message && (
-          <p className="text-green-600 mt-4 text-center">{message}</p>
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-md mt-4 text-center">
+            {message}
+          </div>
         )}
+
+        <p className="text-center text-gray-600 mt-6">
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/signup"
+            className="text-blue-600 hover:text-blue-700 font-semibold transition-all duration-300"
+          >
+            Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );
