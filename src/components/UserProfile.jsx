@@ -27,6 +27,10 @@ function UserProfileCard() {
   const [editingPost, setEditingPost] = useState(null);
   const [editingMediaFile, setEditingMediaFile] = useState(null);
 
+  // NEW: State for followers and following counts, separately maintained.
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
 
@@ -53,6 +57,36 @@ function UserProfileCard() {
       })
       .catch(() => toast.error("Error fetching user profile"));
   }, []);
+
+  // NEW: Fetch both followers and following counts using Promise.all once profile is available.
+  useEffect(() => {
+    if (!profile?._id) return;
+    console.log("profile " + profile?._id);
+    const token = localStorage.getItem("accessToken");
+    const userId = localStorage.getItem("userId");
+
+    async function fetchFollowCounts() {
+      try {
+        const [followersResponse, followingResponse] = await Promise.all([
+          axios.get(
+            `https://bg-io.vercel.app/api/v1/interactions/follows/followers/${userId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          ),
+          axios.get(
+            `https://bg-io.vercel.app/api/v1/interactions/follows/following/${userId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          ),
+        ]);
+        setFollowersCount(followersResponse.data?.data?.length || 0);
+        setFollowingCount(followingResponse.data?.data?.length || 0);
+        console.log("followersCount " + followersCount);
+        console.log("followingCount " + followingCount);
+      } catch (err) {
+        console.error("Error fetching follow counts: ", err);
+      }
+    }
+    fetchFollowCounts();
+  }, [profile?._id]);
 
   const handleProfileUpdate = () => {
     const token = localStorage.getItem("accessToken");
@@ -440,6 +474,11 @@ function UserProfileCard() {
         <h2 className="text-2xl sm:text-3xl font-bold mt-4 text-gray-900">
           {profile?.username}
         </h2>
+        {/* Displaying the fetched counts for followers and following */}
+        <div className="flex justify-center gap-4">
+          <h1>Followers: {followersCount}</h1>
+          <h1>Following: {followingCount}</h1>
+        </div>
         <p className="text-gray-600 text-center px-6 md:px-8">
           {profile?.bio || "No bio available"}
         </p>

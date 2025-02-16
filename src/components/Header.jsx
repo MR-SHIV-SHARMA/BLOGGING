@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaBars, FaTimes, FaSignOutAlt } from "react-icons/fa";
+import { FaBars, FaTimes, FaSignOutAlt, FaUser } from "react-icons/fa";
 import axios from "axios";
 import Cookies from "js-cookie";
 
@@ -11,10 +11,7 @@ function Header() {
 
   // Check if the user is logged in by looking for the accessToken in cookies
   useEffect(() => {
-    // Log all cookies to check if accessToken is present
-    console.log("Cookies: ", Cookies.get("accessToken"));
-    const token = localStorage.getItem("accessToken"); // Retrieve the token from cookies
-
+    const token = localStorage.getItem("accessToken"); // Retrieve the token from local storage
     if (token) {
       setIsLoggedIn(true);
     } else {
@@ -27,6 +24,11 @@ function Header() {
   const logoutHandler = async () => {
     try {
       const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        console.error("No token found in localStorage");
+        return;
+      }
 
       // Sending POST request to logout API endpoint
       await axios.post(
@@ -64,21 +66,21 @@ function Header() {
         { name: "Home", slug: "/" },
         { name: "All Posts", slug: "/all-posts" },
         { name: "Add Post", slug: "/add-post" },
-        { name: "Profile", slug: "/user-profile" },
+        {
+          name: "Profile",
+          slug: "/user-profile",
+          icon: <FaUser className="inline-block mr-2" />,
+        },
         {
           name: "Logout",
           component: (
             <button
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-blue-700 to-blue-400 hover:from-blue-500 hover:to-blue-300 rounded-full shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out"
+              className="flex items-center justify-center gap-2 px-24 py-2 sm:px-4 sm:py-1 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out"
               onClick={logoutHandler}
+              aria-label="Logout"
             >
-              <span className="flex items-center gap-2">
-                <FaSignOutAlt
-                  size={20}
-                  className="transition-transform duration-300 ease-in-out transform hover:rotate-180"
-                />
-                <span className="hidden md:inline">Logout</span>
-              </span>
+              <FaSignOutAlt className="inline-block" />
+              <span className="hidden md:inline">Logout</span>
             </button>
           ),
         },
@@ -93,59 +95,60 @@ function Header() {
   const currentPath = window.location.pathname;
 
   return (
-    <header className="py-1 shadow bg-gray-300">
-      <nav className="flex items-center justify-between">
-        <Link to="/">
+    <header className="shadow-lg bg-gray-900 sticky top-0 z-50">
+      <nav className="container mx-auto px-4 flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center">
           <img
             src="/NextGen-Thinkers-Logo.png"
             alt="NextGen Thinkers Logo"
-            width="60px"
+            className="w-16 h-16"
           />
         </Link>
 
         {/* Toggle Menu Button for Small Screens */}
         <button
-          className="md:hidden ml-auto p-2 text-lg focus:outline-none"
+          className="md:hidden p-2 text-white focus:outline-none"
           onClick={toggleMenu}
+          aria-label="Toggle Menu"
         >
           {menuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
         </button>
 
         {/* Desktop Menu */}
-        <ul className="hidden md:flex items-center space-x-6 ml-auto">
+        <ul className="hidden md:flex items-center space-x-6">
           {navItems.map((item) => (
             <li key={item.name}>
               {item.component ? (
-                // Render LogoutBut directly if present
-                <span className="text-lg font-semibold px-3 py-2 rounded-md">
-                  {item.component}
-                </span>
+                <span className="text-lg font-semibold">{item.component}</span>
               ) : (
-                <button
-                  onClick={() => navigate(item.slug)}
-                  className={`text-lg font-semibold px-3 py-2 rounded-md ${
+                <Link
+                  to={item.slug}
+                  className={`flex items-center text-lg font-semibold px-4 py-1 rounded-lg transition-all duration-300 ${
                     currentPath === item.slug
-                      ? "bg-blue-500 text-white" // Active page styling
-                      : "hover:text-blue-300 hover:bg-gray-700"
+                      ? "bg-purple-600 text-white" // Active page styling
+                      : "text-gray-300 hover:bg-purple-600 hover:text-white"
                   }`}
                 >
+                  {item.icon && item.icon}
                   {item.name}
-                </button>
+                </Link>
               )}
             </li>
           ))}
         </ul>
 
-        {/* Sidebar Menu for Small Devices */}
+        {/* Mobile Menu */}
         <div
-          className={`fixed top-0 right-0 h-full w-2/3 bg-gray-800 text-white z-50 transform ${
+          className={`fixed top-0 right-0 h-full w-64 bg-gray-900 text-white z-50 transform ${
             menuOpen ? "translate-x-0" : "translate-x-full"
           } transition-transform duration-300 ease-in-out`}
         >
           {/* Close Button in Menu */}
           <button
-            className="absolute top-4 right-4 p-2 text-lg text-white"
+            className="absolute top-4 right-4 p-2 text-lg text-white focus:outline-none"
             onClick={toggleMenu}
+            aria-label="Close Menu"
           >
             <FaTimes size={24} />
           </button>
@@ -159,22 +162,19 @@ function Header() {
                     {item.component}
                   </span>
                 ) : (
-                  <button
-                    onClick={() => {
-                      navigate(item.slug);
-                      toggleMenu();
-                    }}
-                    className={`text-lg font-semibold px-4 py-2 w-full text-left ${
+                  <Link
+                    to={item.slug}
+                    onClick={toggleMenu}
+                    className={`flex items-center text-lg font-semibold px-4 py-2 w-full text-left rounded-lg transition-all duration-300 ${
                       currentPath === item.slug
-                        ? "bg-blue-500 text-white" // Active page styling
-                        : "hover:text-blue-300 hover:bg-gray-600"
+                        ? "bg-purple-600 text-white" // Active page styling
+                        : "text-gray-300 hover:bg-purple-600 hover:text-white"
                     }`}
                   >
+                    {item.icon && item.icon}
                     {item.name}
-                  </button>
+                  </Link>
                 )}
-                <div className="border-t-2 border-blue-500 w-full"></div>{" "}
-                {/* Full-width line */}
               </li>
             ))}
           </ul>

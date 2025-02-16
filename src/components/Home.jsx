@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaHeart, FaComment, FaArrowUp } from "react-icons/fa";
 
 function Home() {
   const POSTS_PER_PAGE = 10;
@@ -10,6 +10,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -18,7 +19,7 @@ function Home() {
 
       try {
         const { data } = await axios.get(
-          `https://bg-io.vercel.app/api/v1/content/posts?page=${page}&limit=${POSTS_PER_PAGE}`
+          `http://localhost:3000/api/v1/content/posts?page=${page}&limit=${POSTS_PER_PAGE}`
         );
 
         if (data?.success) {
@@ -37,10 +38,44 @@ function Home() {
     fetchPosts();
   }, [page]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <div className="w-full min-h-screen bg-gray-100 py-10">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {error && <div className="text-center text-red-500 mb-4">{error}</div>}
+    <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 py-10">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold mb-4 animate-fade-in">
+            Welcome to the Blog
+          </h1>
+          <p className="text-xl mb-8 animate-fade-in delay-100">
+            Discover amazing stories, ideas, and insights.
+          </p>
+        </div>
+      </div>
+
+      {/* Posts Section */}
+      <div className="container mx-auto px-4 max-w-6xl mt-10">
+        {error && (
+          <div className="text-center text-red-500 mb-4 text-lg font-semibold">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map((post) => (
@@ -50,7 +85,9 @@ function Home() {
 
         {loading && (
           <div className="text-center py-6">
-            <p className="text-lg text-blue-500">Loading posts...</p>
+            <p className="text-lg text-blue-500 animate-pulse">
+              Loading posts...
+            </p>
           </div>
         )}
 
@@ -58,7 +95,7 @@ function Home() {
           <div className="flex justify-center mt-8">
             <button
               onClick={() => setPage((prev) => prev + 1)}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition-all"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               Load More
             </button>
@@ -71,6 +108,16 @@ function Home() {
           </div>
         )}
       </div>
+
+      {/* Floating Action Button (FAB) */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+        >
+          <FaArrowUp className="text-xl" />
+        </button>
+      )}
     </div>
   );
 }
@@ -78,27 +125,36 @@ function Home() {
 function PostCard({ post }) {
   return (
     <Link to={`/post/${post._id}`} className="block">
-      <div className="bg-white shadow-md rounded-lg overflow-hidden transform transition-all hover:scale-105 hover:shadow-lg">
+      <div className="bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 shadow-lg rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
         {post.media && (
           <img
             src={post.media}
             alt={post.title || "Post Image"}
-            className="w-full h-52 object-cover"
+            className="w-full h-64 object-cover"
           />
         )}
-        <div className="p-4">
+        <div className="p-6">
           {post.title && (
-            <h2 className="text-xl font-bold mb-2 text-gray-800">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">
               {post.title}
             </h2>
           )}
 
-          <div className="flex justify-between text-gray-500 text-sm">
-            <span>❤️ {post.likes?.length || 0}</span>
-            <span>💬 {post.comments?.length || 0}</span>
+          <div className="flex justify-between items-center text-gray-600">
+            <div className="flex items-center space-x-4">
+              <span className="flex items-center">
+                <FaHeart className="mr-1 text-red-500" />{" "}
+                {post.likes?.length || 0}
+              </span>
+              <span className="flex items-center">
+                <FaComment className="mr-1 text-blue-500" />{" "}
+                {post.comments?.length || 0}
+              </span>
+            </div>
+
             {post.userId?.username && (
-              <p className="text-gray-600 text-sm mb-4 flex items-center">
-                <FaUser className="mr-1" /> {post.userId.username}
+              <p className="text-sm flex items-center">
+                <FaUser className="mr-1 text-gray-500" /> {post.userId.username}
               </p>
             )}
           </div>
