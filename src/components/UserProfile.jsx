@@ -9,8 +9,154 @@ import {
   FaHeart,
   FaComment,
   FaArrowUp,
+  FaCamera,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+
+/* ---------------------------- Modal Components ---------------------------- */
+
+function EditPostModal({
+  post,
+  onTitleChange,
+  onContentChange,
+  onFileChange,
+  onClose,
+  onSave,
+}) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Edit Post</h2>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-1">Title</label>
+          <input
+            type="text"
+            value={post.title}
+            onChange={onTitleChange}
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-1">Content</label>
+          <textarea
+            value={post.content}
+            onChange={onContentChange}
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            rows="4"
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-1">Media File</label>
+          <input
+            type="file"
+            onChange={onFileChange}
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="mr-4 bg-gray-500 text-white py-1 px-4 rounded hover:bg-gray-600 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onSave}
+            className="bg-blue-500 text-white py-1 px-4 rounded hover:bg-blue-600 transition"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChangePasswordModal({
+  oldPassword,
+  newPassword,
+  onOldPasswordChange,
+  onNewPasswordChange,
+  onClose,
+  onChangePassword,
+}) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Change Password</h2>
+        <input
+          type="password"
+          placeholder="Old Password"
+          value={oldPassword}
+          onChange={onOldPasswordChange}
+          className="w-full border rounded p-2 mb-4 focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={onNewPasswordChange}
+          className="w-full border rounded p-2 mb-4 focus:ring-2 focus:ring-blue-500"
+        />
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="mr-4 bg-gray-500 text-white py-1 px-4 rounded hover:bg-gray-600 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onChangePassword}
+            className="bg-blue-500 text-white py-1 px-4 rounded hover:bg-blue-600 transition"
+          >
+            Change Password
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccountModal({
+  emailValue,
+  onEmailChange,
+  onClose,
+  onDeleteAccount,
+}) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Confirm Account Deletion</h2>
+        <p className="mb-4 text-gray-700">
+          Please enter your email to confirm account deletion:
+        </p>
+        <input
+          type="email"
+          placeholder="Enter your email"
+          value={emailValue}
+          onChange={onEmailChange}
+          className="w-full border rounded px-3 py-2 mb-4 focus:ring-2 focus:ring-blue-500"
+        />
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="mr-4 bg-gray-500 text-white py-1 px-4 rounded hover:bg-gray-600 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onDeleteAccount}
+            className="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
+          >
+            Delete Account
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------- Main Profile Component ------------------------- */
 
 function UserProfileCard() {
   const [profile, setProfile] = useState(null);
@@ -32,6 +178,12 @@ function UserProfileCard() {
   const [followingCount, setFollowingCount] = useState(0);
   const [editingPost, setEditingPost] = useState(null);
   const [editingMediaFile, setEditingMediaFile] = useState(null);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState("");
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
@@ -112,6 +264,33 @@ function UserProfileCard() {
     fetchFollowCounts();
   }, [profile?._id]);
 
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    axios
+      .post(
+        "https://bg-io.vercel.app/api/v1/user/profile/view/current-user",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then((response) => {
+        const data = response.data.data;
+        console.log("data", data);
+        if (response.data.success) {
+          setCurrentUserProfile(data);
+        } else {
+          toast.error(
+            response.data.message || "Failed to fetch current user profile"
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching current user profile: ", error);
+        toast.error("Error fetching current user profile");
+      });
+  }, []);
+
   const handleProfileUpdate = () => {
     const token = localStorage.getItem("accessToken");
 
@@ -136,6 +315,7 @@ function UserProfileCard() {
         if (data.success) {
           toast.success("Profile updated successfully!");
           setProfile((prev) => ({ ...prev, ...updateData }));
+          setIsEditing(false);
         } else {
           toast.error(data.message || "Failed to update profile");
         }
@@ -180,6 +360,7 @@ function UserProfileCard() {
         if (data.success) {
           toast.success("Avatar updated successfully!");
           setProfile((prev) => ({ ...prev, avatar: data.avatarUrl }));
+          setAvatarFile(null);
         } else {
           toast.error(data.message || "Failed to update avatar");
         }
@@ -210,6 +391,7 @@ function UserProfileCard() {
         if (data.success) {
           toast.success("Cover image updated successfully!");
           setProfile((prev) => ({ ...prev, coverImage: data.coverImageUrl }));
+          setCoverImageFile(null);
         } else {
           toast.error(data.message || "Failed to update cover image");
         }
@@ -261,6 +443,7 @@ function UserProfileCard() {
       );
       if (response.data.success) {
         toast.success("Bookmark created successfully!");
+        setNewBookmarkName("");
         fetchBookmarks();
       } else {
         toast.error(response.data.message || "Failed to create bookmark");
@@ -325,6 +508,7 @@ function UserProfileCard() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
       if (response.data.success) {
         toast.success("Post removed from bookmark successfully!");
       } else {
@@ -339,27 +523,19 @@ function UserProfileCard() {
 
   const deleteBookmark = async (bookmarkId) => {
     const token = localStorage.getItem("accessToken");
-    const postId = deleteBookmark;
-    if (!postId) return;
-
     try {
       const response = await axios.delete(
         `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}`,
-        {
-          data: { postId },
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
-        toast.success("Post removed from bookmark successfully!");
+        toast.success("Bookmark deleted successfully!");
         fetchBookmarks();
       } else {
-        toast.error(
-          response.data.message || "Failed to remove post from bookmark"
-        );
+        toast.error(response.data.message || "Failed to delete bookmark");
       }
     } catch {
-      toast.error("Error removing post from bookmark");
+      toast.error("Error deleting bookmark");
     }
   };
 
@@ -438,7 +614,7 @@ function UserProfileCard() {
       if (response.data.success) {
         toast.success("Post updated successfully!");
         fetchUserPosts();
-        setEditingPost(null); // close the modal
+        setEditingPost(null);
         setEditingMediaFile(null);
       } else {
         toast.error(response.data.message || "Failed to update post");
@@ -449,73 +625,133 @@ function UserProfileCard() {
     }
   };
 
+  const handleChangePassword = async () => {
+    const token = localStorage.getItem("accessToken");
+    try {
+      const response = await axios.post(
+        "https://bg-io.vercel.app/api/v1/auth/password/change-password",
+        { oldPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        toast.success("Password changed successfully!");
+        setOldPassword("");
+        setNewPassword("");
+        setShowPasswordModal(false);
+      } else {
+        toast.error(response.data.message || "Failed to change password");
+      }
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast.error("Error changing password");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      toast.error("Access token not found.");
+      return;
+    }
+
+    // Ensure we have the current user data with an email
+    if (!currentUserProfile || !currentUserProfile.email) {
+      toast.error("Current user data is not available.");
+      return;
+    }
+
+    // Use the email from the current user profile for confirmation
+    if (deleteConfirmationEmail.trim() !== currentUserProfile.email) {
+      toast.error("Entered email does not match your account email.");
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        "https://bg-io.vercel.app/api/v1/user/account/delete-account",
+        {
+          data: { email: currentUserProfile.email },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Account deleted successfully!");
+        // Optionally, add your redirection or localStorage clearing logic here
+      } else {
+        toast.error(response.data.message || "Failed to delete account");
+      }
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Error deleting account");
+    }
+  };
+
   return (
     <div className="max-w-8xl mx-auto mt-8 bg-white shadow-lg rounded-lg overflow-hidden relative p-4 sm:p-6 md:p-8">
       {/* Cover Image Section */}
-      <div className="h-60 sm:h-72 md:h-80 w-full bg-gradient-to-r from-indigo-500 to-purple-600 relative rounded-lg overflow-hidden">
-        {profile?.coverImage ? (
-          <img
-            src={profile.coverImage}
-            alt="Cover"
-            className="w-full h-full object-cover opacity-90"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-indigo-400 to-purple-500"></div>
-        )}
-
-        <div
-          className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md cursor-pointer z-50"
-          style={{ pointerEvents: "auto" }}
-        >
-          <input
-            type="file"
-            ref={coverImageInputRef}
-            onChange={handleCoverImageChange}
-            className="hidden"
-          />
-          <button
-            onClick={() => coverImageInputRef.current.click()}
-            className="text-indigo-600 hover:text-indigo-800"
-          >
-            📷
-          </button>
-        </div>
-      </div>
-
-      {/* Profile Image Section */}
-      <div className="flex flex-col items-center -mt-16 md:-mt-20 relative">
-        <div className="relative">
-          <img
-            src={profile?.avatar || "/default-avatar.png"}
-            alt="Profile"
-            className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white object-cover shadow-xl transition-transform transform hover:scale-110"
-          />
-          <div className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-md cursor-pointer">
+      <div className="relative group">
+        <div className="h-60 sm:h-72 md:h-80 w-full bg-gradient-to-r from-indigo-500 to-purple-600 relative rounded-lg overflow-hidden">
+          {profile?.coverImage ? (
+            <img
+              src={profile.coverImage}
+              alt="Cover"
+              className="w-full h-full object-cover opacity-90 transition-transform duration-300 transform group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-indigo-400 to-purple-500"></div>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black bg-opacity-30">
             <input
               type="file"
-              ref={avatarInputRef}
-              onChange={handleAvatarChange}
+              ref={coverImageInputRef}
+              onChange={handleCoverImageChange}
               className="hidden"
             />
             <button
-              onClick={() => avatarInputRef.current.click()}
-              className="text-indigo-600 hover:text-indigo-800"
+              onClick={() => coverImageInputRef.current.click()}
+              className="text-white flex items-center gap-2 text-lg"
             >
-              📷
+              <FaCamera /> <span>Edit Cover</span>
             </button>
           </div>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl font-bold mt-4 text-gray-900">
-          {profile?.username || "Anonymous"}
-        </h2>
-        <div className="flex justify-center gap-4">
-          <h1>Followers: {followersCount}</h1>
-          <h1>Following: {followingCount}</h1>
+        {/* Profile Image Section */}
+        <div className="flex flex-col items-center -mt-16 md:-mt-20 relative">
+          <div className="relative">
+            <img
+              src={profile?.avatar || "/default-avatar.png"}
+              alt="Profile"
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white object-cover shadow-xl transition-transform transform hover:scale-110"
+            />
+            <div className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-md cursor-pointer">
+              <input
+                type="file"
+                ref={avatarInputRef}
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => avatarInputRef.current.click()}
+                className="text-indigo-600 hover:text-indigo-800"
+              >
+                📷
+              </button>
+            </div>
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-bold mt-4 text-gray-900">
+            {profile?.username || "Anonymous"}
+          </h2>
+          <div className="flex justify-center gap-4">
+            <h1>Followers: {followersCount}</h1>
+            <h1>Following: {followingCount}</h1>
+          </div>
+          <p className="text-gray-600 text-center px-6 md:px-8">
+            {profile?.bio || "No bio available"}
+          </p>
         </div>
-        <p className="text-gray-600 text-center px-6 md:px-8">
-          {profile?.bio || "No bio available"}
-        </p>
       </div>
 
       {/* Profile Details */}
@@ -554,6 +790,18 @@ function UserProfileCard() {
             className="mt-4 bg-blue-500 text-white py-2 px-6 rounded-lg"
           >
             Edit Profile
+          </button>
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="mt-4 bg-indigo-500 text-white py-2 px-6 rounded-lg"
+          >
+            Change Password
+          </button>
+          <button
+            onClick={() => setShowDeleteAccountModal(true)}
+            className="mt-4 bg-red-500 text-white py-2 px-6 rounded-lg"
+          >
+            Delete Account
           </button>
         </div>
       ) : (
@@ -801,57 +1049,41 @@ function UserProfileCard() {
 
       {/* NEW: Editing Modal for updating a post */}
       {editingPost && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Post</h2>
-            <div className="mb-4">
-              <label className="block text-gray-700">Title</label>
-              <input
-                type="text"
-                value={editingPost.title}
-                onChange={(e) =>
-                  setEditingPost({ ...editingPost, title: e.target.value })
-                }
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Content</label>
-              <textarea
-                value={editingPost.content}
-                onChange={(e) =>
-                  setEditingPost({ ...editingPost, content: e.target.value })
-                }
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Media File</label>
-              <input
-                type="file"
-                onChange={(e) => setEditingMediaFile(e.target.files[0])}
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => {
-                  setEditingPost(null);
-                  setEditingMediaFile(null);
-                }}
-                className="mr-4 bg-gray-500 text-white py-1 px-4 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={updatePost}
-                className="bg-blue-500 text-white py-1 px-4 rounded"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditPostModal
+          post={editingPost}
+          onTitleChange={(e) =>
+            setEditingPost({ ...editingPost, title: e.target.value })
+          }
+          onContentChange={(e) =>
+            setEditingPost({ ...editingPost, content: e.target.value })
+          }
+          onFileChange={(e) => setEditingMediaFile(e.target.files[0])}
+          onClose={() => {
+            setEditingPost(null);
+            setEditingMediaFile(null);
+          }}
+          onSave={updatePost}
+        />
+      )}
+
+      {showPasswordModal && (
+        <ChangePasswordModal
+          oldPassword={oldPassword}
+          newPassword={newPassword}
+          onOldPasswordChange={(e) => setOldPassword(e.target.value)}
+          onNewPasswordChange={(e) => setNewPassword(e.target.value)}
+          onClose={() => setShowPasswordModal(false)}
+          onChangePassword={handleChangePassword}
+        />
+      )}
+
+      {showDeleteAccountModal && (
+        <DeleteAccountModal
+          emailValue={deleteConfirmationEmail}
+          onEmailChange={(e) => setDeleteConfirmationEmail(e.target.value)}
+          onClose={() => setShowDeleteAccountModal(false)}
+          onDeleteAccount={handleDeleteAccount}
+        />
       )}
 
       <ToastContainer />

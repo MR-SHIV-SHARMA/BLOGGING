@@ -20,18 +20,36 @@ function Signup() {
     setError(null);
     setButtonDisabled(true);
 
+    // Validate that all fields are provided
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setError("All fields are required.");
+      setButtonDisabled(false);
+      return;
+    }
+
     try {
       setLoading(true);
+
+      // Use "name" as key instead of "username" if your backend expects it
+      const signupData = {
+        name: username,
+        email: email,
+        password: password,
+      };
+
       const response = await axios.post(
         "https://bg-io.vercel.app/api/v1/auth/auth/register",
-        { email, password, username }
+        signupData,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
       );
 
       console.log("Signup success", response.data);
       toast.success("Please check your email", { autoClose: 15000 });
       navigate("/Account_verification_email");
     } catch (err) {
-      console.log("Signup failed", err);
+      console.error("Signup failed", err);
       setError(err.response?.data?.message || "Signup failed. Try again.");
     } finally {
       setLoading(false);
