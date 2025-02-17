@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams, Link } from "react-router-dom";
 
 function SearchResultsPage() {
   const location = useLocation();
@@ -129,68 +129,71 @@ function SearchResultsPage() {
       {searchData?.results && searchData.results.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {searchData.results.map((item) => (
-            <div
-              key={item._id}
-              className="p-4 border border-gray-200 rounded hover:shadow-lg transition duration-200"
-            >
-              {item.media && (
-                <div className="mb-4">
-                  <img
-                    src={item.media}
-                    alt={item.title}
-                    className="w-full h-48 object-cover rounded"
-                  />
-                </div>
-              )}
-              <h2 className="text-xl font-bold mb-2">
-                {item.title || "Untitled"}
-              </h2>
-              {item.content && (
-                <p className="text-gray-700 mb-2">
-                  {item.content.length > 150
-                    ? item.content.substring(0, 150) + "..."
-                    : item.content}
-                </p>
-              )}
-              {item.categories && item.categories.length > 0 && (
-                <div className="mb-2">
-                  {item.categories.map((cat) => (
-                    <span
-                      key={cat._id || cat.name}
-                      className="inline-block bg-gray-200 text-gray-700 px-2 py-1 mr-1 rounded text-sm"
-                    >
-                      {cat.name || "Category"}
+            <Link key={item._id} to={`/post/${item._id}`} className="block">
+              <div className="p-4 border border-gray-200 rounded hover:shadow-lg transition duration-200">
+                {item.media && (
+                  <div className="mb-4">
+                    <img
+                      src={item.media}
+                      alt={item.title}
+                      className="w-full h-48 object-cover rounded"
+                    />
+                  </div>
+                )}
+                <h2 className="text-xl font-bold mb-2">
+                  {item.title || "Untitled"}
+                </h2>
+                {item.content && (
+                  <p className="text-gray-700 mb-2">
+                    {item.content.length > 150
+                      ? item.content.substring(0, 150) + "..."
+                      : item.content}
+                  </p>
+                )}
+                {item.categories && item.categories.length > 0 && (
+                  <div className="mb-2">
+                    {item.categories.map((cat) => (
+                      <span
+                        key={cat._id || cat.name}
+                        className="inline-block bg-gray-200 text-gray-700 px-2 py-1 mr-1 rounded text-sm"
+                      >
+                        {cat.name || "Category"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {item.tags && item.tags.length > 0 && (
+                  <div className="mb-2">
+                    {item.tags.map((tag) => (
+                      <span
+                        key={tag._id || tag.name}
+                        className="inline-block bg-gray-200 text-gray-700 px-2 py-1 mr-1 rounded text-sm"
+                      >
+                        {tag.name || "Tag"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="text-gray-500 text-sm">
+                  <span>
+                    Created on: {new Date(item.createdAt).toLocaleDateString()}
+                  </span>
+                  {item.likes && (
+                    <span className="ml-4">Likes: {item.likes.length}</span>
+                  )}
+                  {item.comments && (
+                    <span className="ml-4">
+                      Comments: {item.comments.length}
                     </span>
-                  ))}
-                </div>
-              )}
-              {item.tags && item.tags.length > 0 && (
-                <div className="mb-2">
-                  {item.tags.map((tag) => (
-                    <span
-                      key={tag._id || tag.name}
-                      className="inline-block bg-gray-200 text-gray-700 px-2 py-1 mr-1 rounded text-sm"
-                    >
-                      {tag.name || "Tag"}
+                  )}
+                  {item.userId?.username && (
+                    <span className="ml-4">
+                      Author: {item.userId?.username}
                     </span>
-                  ))}
+                  )}
                 </div>
-              )}
-              <div className="text-gray-500 text-sm">
-                <span>
-                  Created on: {new Date(item.createdAt).toLocaleDateString()}
-                </span>
-                {item.likes && (
-                  <span className="ml-4">Likes: {item.likes.length}</span>
-                )}
-                {item.comments && (
-                  <span className="ml-4">Comments: {item.comments.length}</span>
-                )}
-                {item.userId?.username && (
-                  <span className="ml-4">Author: {item.userId?.username}</span>
-                )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
