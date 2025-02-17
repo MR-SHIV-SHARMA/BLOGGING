@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaTrash, FaSearch, FaTimes, FaUser } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { FaTrash, FaSearch, FaTimes, FaUserCircle } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
 
 // Dropdown to display search results.
-const SearchResultDropdown = ({ results, onClose }) => {
-  const isUserSearch = results.searchEntry.query.startsWith("@");
+const SearchResultDropdown = ({ results, onClose, userAvatars }) => {
+  const isUserSearch =
+    results.searchEntry && results.searchEntry.query.startsWith("@");
 
   return (
     <div className="absolute top-full left-0 mt-2 w-full max-w-lg bg-white shadow-lg rounded-lg border border-gray-200 z-50">
@@ -22,7 +23,9 @@ const SearchResultDropdown = ({ results, onClose }) => {
       <div className="p-4">
         <div className="mb-4">
           <p className="font-semibold text-gray-700">Query:</p>
-          <p className="text-sm text-gray-600">{results.searchEntry.query}</p>
+          <p className="text-sm text-gray-600">
+            {results.searchEntry ? results.searchEntry.query : ""}
+          </p>
         </div>
         <div>
           <p className="font-semibold text-gray-700 mb-2">Results:</p>
@@ -31,20 +34,23 @@ const SearchResultDropdown = ({ results, onClose }) => {
               isUserSearch ? (
                 <Link
                   key={item._id}
-                  to={`/api/v1/user/profile/view/f/${item._id}`}
+                  to={`/api/v1/user/profile/view/f/${item.userId || item._id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded transition"
                 >
                   <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200">
-                    {item.avatar ? (
+                    {item.avatar ||
+                    (userAvatars && userAvatars[item.userId || item._id]) ? (
                       <img
-                        src={item.avatar}
+                        src={
+                          item.avatar || userAvatars[item.userId || item._id]
+                        }
                         alt={item.username}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-full"
                       />
                     ) : (
-                      <FaUser size={20} className="text-gray-400" />
+                      <FaUserCircle size={40} className="text-gray-400" />
                     )}
                   </div>
                   <div>
@@ -54,6 +60,9 @@ const SearchResultDropdown = ({ results, onClose }) => {
                         (@{item.username})
                       </span>
                     </div>
+                    {/* <div className="text-xs text-gray-500">
+                      ID: {item.userId || item._id}
+                    </div> */}
                     {item.bio && (
                       <p className="text-sm text-gray-600">{item.bio}</p>
                     )}
@@ -147,6 +156,10 @@ const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [searchHistory, setSearchHistory] = useState(null);
+  // State to store avatars fetched separately
+  const [userAvatars, setUserAvatars] = useState({});
+
+  const navigate = useNavigate();
 
   // Handle the search submission (POST method)
   const handleSearch = async (e) => {
@@ -164,12 +177,65 @@ const SearchBar = () => {
         }
       );
       console.log("Search response:", response.data);
-      setSearchResults(response.data);
+
+      // If it's a user search (query starts with "@"), display dropdown
+      if (searchQuery.trim().startsWith("@")) {
+        setSearchResults(response.data);
+      } else {
+        // For non-user searches, navigate to the dedicated search results page.
+        setSearchResults(null);
+        navigate("/search-results", { state: { data: response.data } });
+      }
     } catch (error) {
       console.error("Search error:", error);
       setSearchResults(null);
     }
   };
+
+  useEffect(() => {
+    async function fetchAvatars() {
+      if (
+        !searchResults ||
+        !searchResults.data ||
+        !searchResults.data.results ||
+        !Array.isArray(searchResults.data.results)
+      )
+        return;
+
+      const { searchEntry, results } = searchResults.data;
+      if (!searchEntry || !searchEntry.query.startsWith("@")) return;
+
+      const token = localStorage.getItem("accessToken");
+      const newUserIds = results.map((item) => item.userId || item._id);
+      const uniqueUserIds = [...new Set(newUserIds)];
+
+      for (let id of uniqueUserIds) {
+        if (!id) continue;
+        console.log("Fetching avatar for id: " + id);
+        try {
+          const response = await axios.get(
+            `https://bg-io.vercel.app/api/v1/user/profile/view/${id}`,
+            {
+              headers: { Authorization: token ? `Bearer ${token}` : "" },
+            }
+          );
+
+          if (response.data && response.data.data.avatar) {
+            setUserAvatars((prev) => ({
+              ...prev,
+              [id]: response.data.data.avatar,
+            }));
+          }
+
+          console.log("User avatar:", response.data.data.avatar);
+        } catch (err) {
+          console.error(`Error fetching avatar for user ${id}:`, err);
+        }
+      }
+    }
+
+    fetchAvatars();
+  }, [searchResults]);
 
   // Fetch search history using GET method.
   const fetchSearchHistory = async () => {
@@ -262,6 +328,7 @@ const SearchBar = () => {
         <SearchResultDropdown
           results={searchResults.data}
           onClose={() => setSearchResults(null)}
+          userAvatars={userAvatars}
         />
       ) : (
         !searchQuery.trim() &&
