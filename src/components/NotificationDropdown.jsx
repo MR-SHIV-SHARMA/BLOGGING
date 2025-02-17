@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaBell, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  // Store a mapping of actionUserId (_id) -> avatar URL
+  const [userAvatars, setUserAvatars] = useState({});
 
   // Toggle the dropdown and fetch notifications if opening
   const toggleNotifications = async () => {
@@ -86,7 +88,7 @@ function NotificationDropdown() {
             withCredentials: true,
           }
         );
-        // Remove it from state
+        // Remove from state
         setNotifications((prevNotifications) =>
           prevNotifications.filter((notif) => notif._id !== notifId)
         );
@@ -112,7 +114,7 @@ function NotificationDropdown() {
             withCredentials: true,
           }
         );
-        // Update state for all notifications
+        // Update state
         setNotifications((prevNotifications) =>
           prevNotifications.map((notif) => ({ ...notif, isRead: true }))
         );
@@ -137,7 +139,6 @@ function NotificationDropdown() {
             withCredentials: true,
           }
         );
-        // Clear notifications from state
         setNotifications([]);
       } catch (error) {
         console.error("Failed to delete all notifications", error);
@@ -147,18 +148,55 @@ function NotificationDropdown() {
     }
   };
 
-  // Count unread notifications
+  // Count of unread notifications
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
+
+  // Fetch user avatars for each notification using the actionUserId from the notification
+  useEffect(() => {
+    async function fetchAvatars() {
+      const token = localStorage.getItem("accessToken");
+      // Get all action user IDs from notifications that don't already have an avatar
+      const newUserIds = notifications
+        .map((notif) => notif.actionUserId?._id)
+        .filter((id) => id && !userAvatars[id]);
+      const uniqueUserIds = [...new Set(newUserIds)];
+
+      for (let id of uniqueUserIds) {
+        console.log("Fetching avatar for id: " + id);
+        try {
+          const response = await axios.get(
+            `https://bg-io.vercel.app/api/v1/user/profile/view/${id}`,
+            { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+          );
+
+          // Assume that response.data.data has an "avatar" property
+          if (response.data && response.data.data.avatar) {
+            setUserAvatars((prev) => ({
+              ...prev,
+              [id]: response.data.data.avatar,
+            }));
+          }
+        } catch (err) {
+          console.error(`Error fetching avatar for user ${id}:`, err);
+        }
+      }
+    }
+    if (notifications.length > 0) {
+      fetchAvatars();
+    }
+  }, [notifications, userAvatars]);
 
   return (
     <div className="relative">
-      {/* Bell icon with badge */}
       <button
         onClick={toggleNotifications}
         className="relative flex items-center justify-center gap-2 p-2"
         aria-label="Notifications"
       >
-        <FaBell size={24} className="text-white hover:text-gray-300 transition" />
+        <FaBell
+          size={24}
+          className="text-white hover:text-gray-300 transition"
+        />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs text-white">
             {unreadCount}
@@ -168,9 +206,10 @@ function NotificationDropdown() {
 
       {showNotifications && (
         <div className="absolute right-0 mt-2 w-80 bg-white text-black rounded-lg shadow-lg z-50 divide-y">
-          <div className="flex justify-between items-center px-4 py-2 border-b">
-            <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
-            <div className="flex gap-2">
+          {/* Inline Header */}
+          <div className="px-4 py-2 border-b flex justify-between items-center">
+            <h3 className="text-lg font-bold text-gray-800">Notifications</h3>
+            <div className="flex space-x-2">
               <button
                 onClick={markAllNotificationsRead}
                 className="text-sm text-blue-500 hover:text-blue-700 transition"
@@ -194,16 +233,27 @@ function NotificationDropdown() {
                   key={notif._id}
                   onClick={() => markNotificationRead(notif._id)}
                   className={`py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-start ${
-                    !notif.isRead ? "bg-gray-50" : ""
+                    !notif.isRead ? "bg-gray-200" : ""
                   }`}
                 >
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      {notif.message}
-                    </p>
-                    <span className="block text-xs text-gray-500 mt-1">
-                      {new Date(notif.createdAt).toLocaleString()}
-                    </span>
+                  <div className="flex items-start gap-3">
+                    {/* Display the action user's avatar if available */}
+                    {notif.actionUserId &&
+                      userAvatars[notif.actionUserId._id] && (
+                        <img
+                          src={userAvatars[notif.actionUserId._id]}
+                          alt="User Avatar"
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        {notif.message}
+                      </p>
+                      <span className="block text-xs text-gray-500 mt-1">
+                        {new Date(notif.createdAt).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   <div className="ml-2">
                     <FaTrash
