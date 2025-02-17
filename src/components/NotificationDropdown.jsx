@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaBell, FaTrash } from "react-icons/fa";
+import { FaBell, FaTrash, FaUserCircle } from "react-icons/fa";
 import axios from "axios";
 
 function NotificationDropdown() {
@@ -237,15 +237,17 @@ function NotificationDropdown() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Display the action user's avatar if available */}
+                    {/* If action user's avatar exists, display it; otherwise, show the default icon */}
                     {notif.actionUserId &&
-                      userAvatars[notif.actionUserId._id] && (
-                        <img
-                          src={userAvatars[notif.actionUserId._id]}
-                          alt="User Avatar"
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      )}
+                    userAvatars[notif.actionUserId._id] ? (
+                      <img
+                        src={userAvatars[notif.actionUserId._id]}
+                        alt="User Avatar"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <FaUserCircle size={40} className="text-gray-400" />
+                    )}
                     <div>
                       <p className="text-sm font-medium text-gray-800">
                         {notif.message}
