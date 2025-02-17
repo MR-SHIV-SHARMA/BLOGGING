@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { FaTrash, FaSearch, FaTimes } from "react-icons/fa";
+import { FaTrash, FaSearch, FaTimes, FaUser } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 // Dropdown to display search results.
 const SearchResultDropdown = ({ results, onClose }) => {
@@ -28,17 +29,24 @@ const SearchResultDropdown = ({ results, onClose }) => {
           {results.results && results.results.length > 0 ? (
             results.results.map((item) =>
               isUserSearch ? (
-                <div
+                <Link
                   key={item._id}
+                  to={`/api/v1/user/profile/view/f/${item._id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded transition"
                 >
-                  {item.avatar && (
-                    <img
-                      src={item.avatar}
-                      alt={item.username}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  )}
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200">
+                    {item.avatar ? (
+                      <img
+                        src={item.avatar}
+                        alt={item.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FaUser size={20} className="text-gray-400" />
+                    )}
+                  </div>
                   <div>
                     <div className="text-gray-800 font-bold">
                       {item.fullname}{" "}
@@ -55,7 +63,7 @@ const SearchResultDropdown = ({ results, onClose }) => {
                       </p>
                     )}
                   </div>
-                </div>
+                </Link>
               ) : (
                 <div
                   key={item._id}
