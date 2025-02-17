@@ -169,14 +169,13 @@ const SearchBar = () => {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/common/search/search-history/",
+        "http://localhost:3000/api/v1/common/search/search-history/",
         { query: searchQuery },
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           withCredentials: true,
         }
       );
-      console.log("Search response:", response.data);
 
       // If it's a user search (query starts with "@"), display dropdown
       if (searchQuery.trim().startsWith("@")) {
@@ -211,10 +210,10 @@ const SearchBar = () => {
 
       for (let id of uniqueUserIds) {
         if (!id) continue;
-        console.log("Fetching avatar for id: " + id);
+
         try {
           const response = await axios.get(
-            `https://bg-io.vercel.app/api/v1/user/profile/view/${id}`,
+            `http://localhost:3000/api/v1/user/profile/view/${id}`,
             {
               headers: { Authorization: token ? `Bearer ${token}` : "" },
             }
@@ -226,8 +225,6 @@ const SearchBar = () => {
               [id]: response.data.data.avatar,
             }));
           }
-
-          console.log("User avatar:", response.data.data.avatar);
         } catch (err) {
           console.error(`Error fetching avatar for user ${id}:`, err);
         }
@@ -242,13 +239,13 @@ const SearchBar = () => {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.get(
-        "https://bg-io.vercel.app/api/v1/common/search/search-history/",
+        "http://localhost:3000/api/v1/common/search/search-history/",
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           withCredentials: true,
         }
       );
-      console.log("Search history response:", response.data);
+
       setSearchHistory(response.data);
     } catch (error) {
       console.error("Error fetching search history:", error);
@@ -261,7 +258,7 @@ const SearchBar = () => {
     const token = localStorage.getItem("accessToken");
     try {
       await axios.delete(
-        `https://bg-io.vercel.app/api/v1/common/search/search-history/${id}`,
+        `http://localhost:3000/api/v1/common/search/search-history/${id}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           withCredentials: true,
@@ -284,7 +281,7 @@ const SearchBar = () => {
     const token = localStorage.getItem("accessToken");
     try {
       await axios.delete(
-        "https://bg-io.vercel.app/api/v1/common/search/search-history/clear",
+        "http://localhost:3000/api/v1/common/search/search-history/clear",
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
           withCredentials: true,

@@ -6,37 +6,24 @@ function SearchResultsPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // Debug: Log the entire location state to inspect what we're receiving from the previous page.
-  console.log("Location state:", location.state);
-
-  // If we have data from the navigation state, extract the inner 'data' property.
+  // Extract initial data from the location state (if available)
   const initialData = location.state?.data?.data || null;
-  console.log("Initial data from state:", initialData);
-
   const [searchData, setSearchData] = useState(initialData);
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState(null);
 
-  // Determine the search query from the state (if available) or by checking URL query params.
+  // Determine the query from either the location state or URL query parameter
   const query =
     location.state?.data?.data?.searchEntry?.query || searchParams.get("query");
-  console.log("Determined query:", query);
 
-  // Debug: Log every time searchData updates.
-  useEffect(() => {
-    console.log("searchData updated:", searchData);
-  }, [searchData]);
-
+  // Fetch search results if there's no search data and a query exists
   useEffect(() => {
     if (!searchData && query) {
       const token = localStorage.getItem("accessToken");
-      console.log("Initiating fetch for search results with query:", query);
-      console.log("Token found:", token);
-
       setLoading(true);
       axios
         .post(
-          "https://bg-io.vercel.app/api/v1/common/search/search-history/",
+          "http://localhost:3000/api/v1/common/search/search-history/",
           { query },
           {
             headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -44,36 +31,11 @@ function SearchResultsPage() {
           }
         )
         .then((response) => {
-          console.log("Full API response received:", response);
-          if (response && response.data) {
-            if (response.data.data) {
-              setSearchData(response.data.data);
-              if (
-                response.data.data.results &&
-                response.data.data.results.length > 0
-              ) {
-                console.log(
-                  "Search data (first result title):",
-                  response.data.data.results[0].title
-                );
-              } else {
-                console.log(
-                  "No results found within response.data.data.results:",
-                  response.data.data.results
-                );
-              }
-            } else {
-              console.log(
-                "No inner data found in response.data:",
-                response.data
-              );
-            }
-          } else {
-            console.log("Invalid API response format:", response);
+          if (response?.data?.data) {
+            setSearchData(response.data.data);
           }
         })
         .catch((err) => {
-          console.error("Error fetching search results:", err);
           setError("Error fetching search results.");
         })
         .finally(() => {
@@ -82,28 +44,21 @@ function SearchResultsPage() {
     }
   }, [query, searchData]);
 
-  // NEW: This effect listens to changes in the location.
-  // When a new search is performed, the navigate() call in SearchBar updates location.state.
-  // We then update searchData accordingly.
+  // Listen to location state changes to update new search results dynamically
   useEffect(() => {
     const newSearchData = location.state?.data?.data;
     if (newSearchData) {
-      // If the new search query is different from the current one, update state.
       if (
         !searchData ||
         (newSearchData.searchEntry &&
           newSearchData.searchEntry.query !== searchData.searchEntry?.query)
       ) {
-        console.log(
-          "Updating search data from new location state:",
-          newSearchData
-        );
         setSearchData(newSearchData);
         setLoading(false);
         setError(null);
       }
     }
-  }, [location.state]); // Runs whenever location.state changes
+  }, [location.state]);
 
   if (loading) {
     return (
