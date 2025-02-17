@@ -30,9 +30,8 @@ function Signup() {
     try {
       setLoading(true);
 
-      // Use "name" as key instead of "username" if your backend expects it
       const signupData = {
-        name: username,
+        username: username,
         email: email,
         password: password,
       };
