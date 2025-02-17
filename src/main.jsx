@@ -15,6 +15,7 @@ import UserProfileCard from "./components/UserProfile";
 import ResetPassword from "./components/ResetPassword";
 import AccountRestoration from "./components/AccountRestoration";
 import PublicUserProfile from "./components/PublicUserProfile";
+import SearchResultsPage from "./components/SearchResultsPage";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           path="/api/v1/user/profile/view/f/:userId"
           element={<PublicUserProfile />}
         />
+        <Route path="/search-results" element={<SearchResultsPage />} />
       </Routes>
       <Footer />
     </BrowserRouter>
