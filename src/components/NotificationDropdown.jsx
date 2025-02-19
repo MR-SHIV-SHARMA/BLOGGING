@@ -20,7 +20,7 @@ function NotificationDropdown() {
       if (userId && token) {
         try {
           const response = await axios.get(
-            `https://bg-io.vercel.app/api/v1/interactions/notifications/${userId}`,
+            `/interactions/notifications/${userId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
               withCredentials: true,
@@ -54,7 +54,7 @@ function NotificationDropdown() {
     if (token) {
       try {
         await axios.patch(
-          `https://bg-io.vercel.app/api/v1/interactions/notifications/read/${notifId}`,
+          `/interactions/notifications/read/${notifId}`,
           {},
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -82,13 +82,10 @@ function NotificationDropdown() {
     const token = localStorage.getItem("accessToken");
     if (token) {
       try {
-        await axios.delete(
-          `https://bg-io.vercel.app/api/v1/interactions/notifications/${notifId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
+        await axios.delete(`/interactions/notifications/${notifId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
         // Remove from state
         setNotifications((prevNotifications) =>
           prevNotifications.filter((notif) => notif._id !== notifId)
@@ -108,7 +105,7 @@ function NotificationDropdown() {
     if (userId && token) {
       try {
         await axios.patch(
-          `https://bg-io.vercel.app/api/v1/interactions/notifications/read/all/${userId}`,
+          `/interactions/notifications/read/all/${userId}`,
           {},
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -133,13 +130,10 @@ function NotificationDropdown() {
     const token = localStorage.getItem("accessToken");
     if (userId && token) {
       try {
-        await axios.delete(
-          `https://bg-io.vercel.app/api/v1/interactions/notifications/all/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
+        await axios.delete(`/interactions/notifications/all/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
         setNotifications([]);
       } catch (error) {
         console.error("Failed to delete all notifications", error);
@@ -165,10 +159,9 @@ function NotificationDropdown() {
       for (let id of uniqueUserIds) {
         console.log("Fetching avatar for id: " + id);
         try {
-          const response = await axios.get(
-            `https://bg-io.vercel.app/api/v1/user/profile/view/${id}`,
-            { headers: { Authorization: token ? `Bearer ${token}` : "" } }
-          );
+          const response = await axios.get(`/user/profile/view/${id}`, {
+            headers: { Authorization: token ? `Bearer ${token}` : "" },
+          });
 
           // Assume that response.data.data has an "avatar" property
           if (response.data && response.data.data.avatar) {
@@ -199,16 +192,16 @@ function NotificationDropdown() {
           className="text-white hover:text-gray-300 transition"
         />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs text-white">
+          <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white">
             {unreadCount}
           </span>
         )}
       </button>
 
       {showNotifications && (
-        <div className="absolute right-0 mt-2 sm:w-80 bg-white text-black rounded-lg shadow-lg z-50 divide-y">
-          {/* Inline Header */}
-          <div className="px-4 py-2 border-b flex justify-between items-center">
+        <div className="absolute right-0 mt-2 w-[90vw] max-w-sm bg-white text-black rounded-lg shadow-lg z-50 divide-y sm:w-80">
+          {/* Header */}
+          <div className="px-4 py-2 border-b flex justify-between items-center bg-gray-100">
             <h3 className="text-lg font-bold text-gray-800">Notifications</h3>
             <div className="flex space-x-2">
               <button
@@ -225,15 +218,17 @@ function NotificationDropdown() {
               </button>
             </div>
           </div>
-          <div className="max-h-60 overflow-y-auto p-4">
+          <div className="max-h-60 overflow-y-auto p-4 space-y-2">
             {notifications.length === 0 ? (
-              <p className="text-sm text-gray-500">No notifications</p>
+              <p className="text-sm text-gray-500 text-center">
+                No notifications
+              </p>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif._id}
                   onClick={() => markNotificationRead(notif._id)}
-                  className={`py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-start ${
+                  className={`flex justify-between items-start p-3 rounded-lg hover:bg-gray-100 cursor-pointer transition ${
                     !notif.isRead ? "bg-gray-200" : ""
                   }`}
                 >
@@ -242,7 +237,6 @@ function NotificationDropdown() {
                       to={`/api/v1/user/profile/view/f/${notif.actionUserId._id}`}
                       className="group relative"
                     >
-                      {/* If action user's avatar exists, display it; otherwise, show the default icon */}
                       {notif.actionUserId &&
                       userAvatars[notif.actionUserId._id] ? (
                         <img
@@ -263,12 +257,10 @@ function NotificationDropdown() {
                       </span>
                     </div>
                   </div>
-                  <div className="ml-2">
-                    <FaTrash
-                      onClick={(e) => deleteNotification(notif._id, e)}
-                      className="text-red-500 hover:text-red-700 cursor-pointer transition"
-                    />
-                  </div>
+                  <FaTrash
+                    onClick={(e) => deleteNotification(notif._id, e)}
+                    className="text-red-500 hover:text-red-700 cursor-pointer transition"
+                  />
                 </div>
               ))
             )}
