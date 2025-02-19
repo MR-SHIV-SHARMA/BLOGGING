@@ -27,7 +27,7 @@ function Header() {
         return;
       }
       await axios.post(
-        "https://bg-io.vercel.app/api/v1/auth/auth/logout",
+        "/auth/auth/logout",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

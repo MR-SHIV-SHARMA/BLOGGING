@@ -30,7 +30,7 @@ function Login() {
 
     try {
       const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/auth/auth/login",
+        "/auth/auth/login",
         { email, password },
         { withCredentials: true }
       );

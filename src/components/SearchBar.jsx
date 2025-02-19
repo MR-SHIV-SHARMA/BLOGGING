@@ -33,7 +33,7 @@ const SearchBar = () => {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/common/search/search-history/",
+        "/common/search/search-history/",
         { query },
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -52,13 +52,10 @@ const SearchBar = () => {
   const fetchSearchHistory = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.get(
-        "https://bg-io.vercel.app/api/v1/common/search/search-history/",
-        {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-          withCredentials: true,
-        }
-      );
+      const response = await axios.get("/common/search/search-history/", {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        withCredentials: true,
+      });
       setSearchHistory(response.data);
     } catch (error) {
       setSearchHistory(null);
@@ -68,13 +65,10 @@ const SearchBar = () => {
   const deleteSearchHistoryEntry = async (id) => {
     const token = localStorage.getItem("accessToken");
     try {
-      await axios.delete(
-        `https://bg-io.vercel.app/api/v1/common/search/search-history/${id}`,
-        {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-          withCredentials: true,
-        }
-      );
+      await axios.delete(`/common/search/search-history/${id}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        withCredentials: true,
+      });
       setSearchHistory((prev) => ({
         ...prev,
         data: {
@@ -88,13 +82,10 @@ const SearchBar = () => {
   const clearSearchHistory = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      await axios.delete(
-        "https://bg-io.vercel.app/api/v1/common/search/search-history/clear",
-        {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-          withCredentials: true,
-        }
-      );
+      await axios.delete("/common/search/search-history/clear", {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        withCredentials: true,
+      });
       setSearchHistory((prev) =>
         prev
           ? { ...prev, data: { ...prev.data, results: [], suggestions: [] } }
@@ -171,12 +162,9 @@ const SearchBar = () => {
       for (let id of uniqueUserIds) {
         if (!id) continue;
         try {
-          const response = await axios.get(
-            `https://bg-io.vercel.app/api/v1/user/profile/view/${id}`,
-            {
-              headers: { Authorization: token ? `Bearer ${token}` : "" },
-            }
-          );
+          const response = await axios.get(`/user/profile/view/${id}`, {
+            headers: { Authorization: token ? `Bearer ${token}` : "" },
+          });
           if (response.data && response.data.data.avatar) {
             setUserAvatars((prev) => ({
               ...prev,

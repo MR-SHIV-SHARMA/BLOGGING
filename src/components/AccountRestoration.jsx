@@ -16,10 +16,9 @@ function AccountRestoration() {
     }
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/user/account/request-restoration",
-        { email }
-      );
+      const response = await axios.post("/user/account/request-restoration", {
+        email,
+      });
       if (response.data.success) {
         toast.success("Account restoration request sent successfully!");
         setEmail("");

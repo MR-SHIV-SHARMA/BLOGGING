@@ -204,7 +204,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
 
     axios
-      .get("https://bg-io.vercel.app/api/v1/user/profile/view", {
+      .get("/user/profile/view", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -258,14 +258,12 @@ function UserProfileCard() {
     async function fetchFollowCounts() {
       try {
         const [followersResponse, followingResponse] = await Promise.all([
-          axios.get(
-            `https://bg-io.vercel.app/api/v1/interactions/follows/followers/${userId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
-          axios.get(
-            `https://bg-io.vercel.app/api/v1/interactions/follows/following/${userId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          ),
+          axios.get(`/interactions/follows/followers/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`/interactions/follows/following/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
         setFollowersCount(followersResponse.data?.data?.length || 0);
         setFollowingCount(followingResponse.data?.data?.length || 0);
@@ -280,7 +278,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     axios
       .post(
-        "https://bg-io.vercel.app/api/v1/user/profile/view/current-user",
+        "/user/profile/view/current-user",
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -316,7 +314,7 @@ function UserProfileCard() {
     };
 
     axios
-      .patch("https://bg-io.vercel.app/api/v1/user/profile/media", updateData, {
+      .patch("/user/profile/media", updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -358,15 +356,11 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
 
     await axios
-      .patch(
-        "https://bg-io.vercel.app/api/v1/user/profile/media/update-avatar",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      .patch("/user/profile/media/update-avatar", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then((response) => {
         const data = response.data;
         if (data.success) {
@@ -389,15 +383,11 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
 
     axios
-      .patch(
-        "https://bg-io.vercel.app/api/v1/user/profile/media/update-cover-image",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      .patch("/user/profile/media/update-cover-image", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .then((response) => {
         const data = response.data;
         if (data.success) {
@@ -419,7 +409,7 @@ function UserProfileCard() {
     setIsLoadingPosts(true);
     const token = localStorage.getItem("accessToken");
     axios
-      .get("https://bg-io.vercel.app/api/v1/content/posts/user/posts", {
+      .get("/content/posts/user/posts", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -447,7 +437,7 @@ function UserProfileCard() {
 
     try {
       const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
+        "/interactions/bookmarks/",
         { name: newBookmarkName },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -468,12 +458,9 @@ function UserProfileCard() {
   const fetchBookmarks = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.get(
-        "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get("/interactions/bookmarks/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.success) {
         setBookmarks(response.data.data || []);
       } else {
@@ -493,7 +480,7 @@ function UserProfileCard() {
 
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts`,
+        `/interactions/bookmarks/${bookmarkId}/posts`,
         { postId },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -515,7 +502,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts/${postId}`,
+        `/interactions/bookmarks/${bookmarkId}/posts/${postId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -537,7 +524,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}`,
+        `/interactions/bookmarks/${bookmarkId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
@@ -554,12 +541,9 @@ function UserProfileCard() {
   const deletePost = async (postId) => {
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/content/posts/${postId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.delete(`/content/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.success) {
         toast.success("Post deleted successfully!");
         await fetchUserPosts();
@@ -576,12 +560,9 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     setIsLoadingPosts(true);
     try {
-      const response = await axios.get(
-        "https://bg-io.vercel.app/api/v1/content/posts/user/posts",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get("/content/posts/user/posts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.success) {
         setUserPosts(response.data.data || []);
       } else {
@@ -616,7 +597,7 @@ function UserProfileCard() {
 
     try {
       const response = await axios.patch(
-        `https://bg-io.vercel.app/api/v1/content/posts/${editingPost._id}`,
+        `/content/posts/${editingPost._id}`,
         formData,
         {
           headers: {
@@ -642,7 +623,7 @@ function UserProfileCard() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/auth/password/change-password",
+        "/auth/password/change-password",
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -680,13 +661,10 @@ function UserProfileCard() {
     }
 
     try {
-      const response = await axios.delete(
-        "https://bg-io.vercel.app/api/v1/user/account/delete-account",
-        {
-          data: { email: currentUserProfile.email },
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.delete("/user/account/delete-account", {
+        data: { email: currentUserProfile.email },
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
         toast.success("Account deleted successfully!");

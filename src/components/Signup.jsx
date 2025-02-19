@@ -36,13 +36,9 @@ function Signup() {
         password: password,
       };
 
-      const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/auth/auth/register",
-        signupData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const response = await axios.post("/auth/auth/register", signupData, {
+        headers: { "Content-Type": "application/json" },
+      });
 
       console.log("Signup success", response.data);
       toast.success("Please check your email", { autoClose: 15000 });

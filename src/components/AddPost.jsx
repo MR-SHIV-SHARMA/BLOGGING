@@ -23,14 +23,12 @@ function AddPost() {
       try {
         const token = localStorage.getItem("accessToken");
 
-        const categoryResponse = await axios.get(
-          "https://bg-io.vercel.app/api/v1/common/categories/manage",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const tagsResponse = await axios.get(
-          "https://bg-io.vercel.app/api/v1/content/tags/",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const categoryResponse = await axios.get("/common/categories/manage", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const tagsResponse = await axios.get("/content/tags/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (tagsResponse.data.success) {
           setTags(tagsResponse.data.data);
@@ -96,11 +94,9 @@ function AddPost() {
         return;
       }
 
-      const response = await axios.post(
-        "https://bg-io.vercel.app/api/v1/content/posts",
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.post("/content/posts", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
         setMessage("Post created successfully!");

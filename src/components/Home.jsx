@@ -19,13 +19,16 @@ function Home() {
 
       try {
         const { data } = await axios.get(
-          `https://bg-io.vercel.app/api/v1/content/posts?page=${page}&limit=${POSTS_PER_PAGE}`
+          `/content/posts?page=${page}&limit=${POSTS_PER_PAGE}`
         );
 
         if (data?.success) {
-          const newPosts = data.data;
-          setPosts((prev) => (page === 1 ? newPosts : [...prev, ...newPosts]));
-          if (newPosts.length < POSTS_PER_PAGE) setHasMore(false);
+          // Filter only active posts
+          const activePosts = data.data.filter((post) => post.isActive);
+          setPosts((prev) =>
+            page === 1 ? activePosts : [...prev, ...activePosts]
+          );
+          if (activePosts.length < POSTS_PER_PAGE) setHasMore(false);
         }
       } catch (err) {
         console.error("Error fetching posts:", err);

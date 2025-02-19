@@ -10,9 +10,7 @@ function AllPosts() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch(
-          "https://bg-io.vercel.app/api/v1/content/posts"
-        );
+        const response = await fetch("/content/posts");
         const result = await response.json();
 
         if (result && result.success && Array.isArray(result.data)) {

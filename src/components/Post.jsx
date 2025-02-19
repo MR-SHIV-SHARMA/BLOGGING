@@ -101,7 +101,7 @@ function PostDetail() {
 
     try {
       const response = await axios.get(
-        `https://bg-io.vercel.app/api/v1/content/comments/post/comments/${post._id}`
+        `/content/comments/post/comments/${post._id}`
       );
       if (response.data.success) {
         const commentsData = response.data.data.comments;
@@ -137,9 +137,7 @@ function PostDetail() {
           }
         }
 
-        const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/content/posts/${slug}`
-        );
+        const response = await axios.get(`/content/posts/${slug}`);
         const postData = response.data.data;
         // Cache the result if needed
         localStorage.setItem(`post_${slug}`, JSON.stringify(postData));
@@ -167,12 +165,9 @@ function PostDetail() {
 
       const token = localStorage.getItem("accessToken");
       try {
-        const response = await axios.get(
-          "https://bg-io.vercel.app/api/v1/interactions/bookmarks/",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get("/interactions/bookmarks/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (response.data.success) {
           const bookmarksData = response.data.data || [];
           setBookmarks(bookmarksData);
@@ -197,12 +192,9 @@ function PostDetail() {
 
       const token = localStorage.getItem("accessToken");
       try {
-        const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/interactions/likes/post/${postId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get(`/interactions/likes/post/${postId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (response.data.success) {
           const likesCount = response.data.data.likesCount;
@@ -226,12 +218,9 @@ function PostDetail() {
       if (!token || !currentUser) return;
 
       try {
-        const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/interactions/likes/post/${postId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get(`/interactions/likes/post/${postId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (response.data.success) {
           const { likes } = response.data.data;
@@ -322,7 +311,7 @@ function PostDetail() {
 
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/interactions/bookmarks/${bookmarkId}/posts`,
+        `/interactions/bookmarks/${bookmarkId}/posts`,
         { postId },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -377,7 +366,7 @@ function PostDetail() {
 
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/interactions/likes/post/${postId}`,
+        `/interactions/likes/post/${postId}`,
         { postId },
         {
           headers: {
@@ -416,7 +405,7 @@ function PostDetail() {
 
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/interactions/likes/post/${postId}`,
+        `/interactions/likes/post/${postId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -472,7 +461,7 @@ function PostDetail() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/content/comments/post/${post._id}`,
+        `/content/comments/post/${post._id}`,
         {
           postId: post._id, // Explicitly send postId
           userId: currentUser._id, // Explicitly send userId
@@ -513,7 +502,7 @@ function PostDetail() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.put(
-        `https://bg-io.vercel.app/api/v1/content/comments/${commentId}`,
+        `/content/comments/${commentId}`,
         { content: editingCommentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -540,10 +529,9 @@ function PostDetail() {
 
     const token = localStorage.getItem("accessToken");
     try {
-      const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/content/comments/${commentId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.delete(`/content/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
         toast.success("Comment deleted successfully!");
@@ -577,7 +565,7 @@ function PostDetail() {
     }
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/interactions/likes/comment/${commentId}`,
+        `/interactions/likes/comment/${commentId}`,
         { commentId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -595,7 +583,7 @@ function PostDetail() {
     }
     try {
       const response = await axios.delete(
-        `https://bg-io.vercel.app/api/v1/interactions/likes/comment/${commentId}`,
+        `/interactions/likes/comment/${commentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       return response;
@@ -738,7 +726,7 @@ function PostDetail() {
     const token = localStorage.getItem("accessToken");
     try {
       const response = await axios.post(
-        `https://bg-io.vercel.app/api/v1/content/comments/${commentId}/replies`,
+        `/content/comments/${commentId}/replies`,
         { content: replyContent },
         { headers: { Authorization: `Bearer ${token}` } }
       );

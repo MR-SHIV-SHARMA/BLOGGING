@@ -18,10 +18,9 @@ function PublicUserProfile() {
     async function fetchUserProfile() {
       const token = localStorage.getItem("accessToken");
       try {
-        const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/user/profile/view/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axios.get(`/user/profile/view/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const profileData = response.data?.data;
         if (profileData && Object.keys(profileData).length > 0) {
           setData(profileData);
@@ -59,10 +58,9 @@ function PublicUserProfile() {
       }
 
       try {
-        const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/user/profile/view/f/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axios.get(`/user/profile/view/f/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (response.data?.data) {
           setProfile(response.data.data);
         } else {
@@ -85,7 +83,7 @@ function PublicUserProfile() {
       setPostsLoading(true);
       try {
         const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/content/posts/user/${profile._id}/posts`,
+          `/content/posts/user/${profile._id}/posts`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (response.data?.data) {
@@ -108,7 +106,7 @@ function PublicUserProfile() {
 
     try {
       const response = await axios.get(
-        `https://bg-io.vercel.app/api/v1/interactions/follows/followers/${profile._id}`,
+        `/interactions/follows/followers/${profile._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data?.data) {
@@ -155,7 +153,7 @@ function PublicUserProfile() {
     async function fetchFollowing() {
       try {
         const response = await axios.get(
-          `https://bg-io.vercel.app/api/v1/interactions/follows/following/${profile._id}`,
+          `/interactions/follows/following/${profile._id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (response.data?.data) {
@@ -196,13 +194,13 @@ function PublicUserProfile() {
     try {
       if (profile.isFollowing) {
         await axios.post(
-          `https://bg-io.vercel.app/api/v1/interactions/follows/unfollow/${profile._id}`,
+          `/interactions/follows/unfollow/${profile._id}`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         await axios.post(
-          `https://bg-io.vercel.app/api/v1/interactions/follows/follow/${profile._id}`,
+          `/interactions/follows/follow/${profile._id}`,
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
