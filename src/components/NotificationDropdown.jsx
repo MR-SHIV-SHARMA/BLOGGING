@@ -206,7 +206,7 @@ function NotificationDropdown() {
       </button>
 
       {showNotifications && (
-        <div className="absolute right-0 mt-2 w-80 bg-white text-black rounded-lg shadow-lg z-50 divide-y">
+        <div className="absolute right-0 mt-2 sm:w-80 bg-white text-black rounded-lg shadow-lg z-50 divide-y">
           {/* Inline Header */}
           <div className="px-4 py-2 border-b flex justify-between items-center">
             <h3 className="text-lg font-bold text-gray-800">Notifications</h3>

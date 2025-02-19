@@ -19,6 +19,7 @@ function EditPostModal({
   post,
   onTitleChange,
   onContentChange,
+  onActiveChange,
   onFileChange,
   onClose,
   onSave,
@@ -44,6 +45,17 @@ function EditPostModal({
             className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500"
             rows="4"
           />
+        </div>
+        <div className="mb-4">
+          <label className="inline-flex items-center">
+            <input
+              type="checkbox"
+              checked={post.isActive}
+              onChange={onActiveChange}
+              className="form-checkbox"
+            />
+            <span className="ml-2">Active</span>
+          </label>
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 mb-1">Media File</label>
@@ -597,6 +609,7 @@ function UserProfileCard() {
     const formData = new FormData();
     formData.append("title", editingPost.title);
     formData.append("content", editingPost.content);
+    formData.append("isActive", editingPost.isActive ? "true" : "false");
     if (editingMediaFile) {
       formData.append("media", editingMediaFile);
     }
@@ -1056,6 +1069,9 @@ function UserProfileCard() {
           }
           onContentChange={(e) =>
             setEditingPost({ ...editingPost, content: e.target.value })
+          }
+          onActiveChange={(e) =>
+            setEditingPost({ ...editingPost, isActive: e.target.checked })
           }
           onFileChange={(e) => setEditingMediaFile(e.target.files[0])}
           onClose={() => {

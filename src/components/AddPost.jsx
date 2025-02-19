@@ -15,6 +15,9 @@ function AddPost() {
   const [categoryId, setCategoryId] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
 
+  // New state to handle post's active status
+  const [isActive, setIsActive] = useState(true);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -79,6 +82,9 @@ function AddPost() {
     if (media) formData.append("media", media);
     formData.append("categoryId", categoryId);
     selectedTags.forEach((tagId) => formData.append("tagId", tagId));
+
+    // Append the isactive field
+    formData.append("isactive", isActive ? "true" : "false");
 
     try {
       setLoading(true);
@@ -202,6 +208,20 @@ function AddPost() {
                 </span>
               );
             })}
+          </div>
+
+          {/* New isactive checkbox field */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isactive"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="mr-2"
+            />
+            <label htmlFor="isactive" className="text-sm">
+              Active
+            </label>
           </div>
 
           <input
