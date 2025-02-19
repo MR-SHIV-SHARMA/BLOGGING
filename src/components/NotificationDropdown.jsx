@@ -199,7 +199,7 @@ function NotificationDropdown() {
       </button>
 
       {showNotifications && (
-        <div className="absolute right-0 mt-2 w-[90vw] max-w-sm bg-white text-black rounded-lg shadow-lg z-50 divide-y sm:w-80">
+        <div className="absolute -right-14 mt-1 sm:mt-3 w-[90vw] max-w-sm bg-white text-black rounded-lg shadow-lg z-50 divide-y sm:w-80">
           {/* Header */}
           <div className="px-4 py-2 border-b flex justify-between items-center bg-gray-100">
             <h3 className="text-lg font-bold text-gray-800">Notifications</h3>
