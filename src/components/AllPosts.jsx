@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Masonry from "react-masonry-css";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link } from "react-router-dom";
+import axios from "axios";
 
 function AllPosts() {
   const [posts, setPosts] = useState([]);
@@ -10,8 +11,8 @@ function AllPosts() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("/content/posts");
-        const result = await response.json();
+        const response = await axios.get("/content/posts");
+        const result = response.data;
 
         if (result && result.success && Array.isArray(result.data)) {
           const sortedPosts = result.data.sort((a, b) => {
