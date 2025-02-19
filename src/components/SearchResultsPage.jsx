@@ -23,7 +23,7 @@ function SearchResultsPage() {
       setLoading(true);
       axios
         .post(
-          "http://localhost:3000/api/v1/common/search/search-history/",
+          "https://bg-io.vercel.app/api/v1/common/search/search-history/",
           { query },
           {
             headers: { Authorization: token ? `Bearer ${token}` : "" },

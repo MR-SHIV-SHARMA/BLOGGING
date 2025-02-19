@@ -45,60 +45,77 @@ function Header() {
     }
   };
 
-  // Navigation items based on login status.
-  const navItems = isLoggedIn
-    ? [
-        { name: "Home", slug: "/" },
-        { name: "All Posts", slug: "/all-posts" },
-        { name: "Add Post", slug: "/add-post" },
-        {
-          name: "Profile",
-          slug: "/user-profile",
-          icon: <FaUser className="inline-block mr-2" />,
-        },
-        {
-          name: "Notifications",
-          component: <NotificationDropdown />,
-        },
-        {
-          name: "Logout",
-          component: (
-            <button
-              onClick={logoutHandler}
-              className="flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-md transition"
-              aria-label="Logout"
-            >
-              <FaSignOutAlt />
-              <span className="hidden md:inline">Logout</span>
-            </button>
-          ),
-        },
-      ]
-    : [
-        { name: "Home", slug: "/" },
-        { name: "Login", slug: "/login" },
-        { name: "Signup", slug: "/signup" },
-      ];
-
   const currentPath = window.location.pathname;
 
   return (
     <header className="shadow-lg bg-gray-900 sticky top-0 z-50">
       <nav className="container mx-auto px-4 flex items-center justify-between relative">
-        <div className="flex items-center">
+        {/* Logo Section */}
+        <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex items-center">
             <img
               src="/NextGen-Thinkers-Logo.png"
               alt="NextGen Thinkers Logo"
-              className="w-16 h-16"
+              className="w-12 h-12 md:w-16 md:h-16" // Adjusted for mobile
             />
           </Link>
-          {/* Render the new SearchBar component for desktops */}
-          <div className="hidden md:flex ml-4">
-            <SearchBar />
-          </div>
         </div>
-        <div className="flex items-center">
+
+        {/* Desktop Navigation Section */}
+        <div className="flex items-center gap-4">
+          {isLoggedIn ? (
+            <>
+              {/* Search Bar - Hidden on mobile */}
+              <div className="flex justify-center items-center">
+                <SearchBar />
+              </div>
+
+              {/* Notification - Always visible */}
+              <div className="flex justify-center items-center">
+                <NotificationDropdown />
+              </div>
+
+              {/* Desktop Links - Hidden on mobile */}
+              <div className="hidden md:flex items-center gap-x-6 ml-4">
+                <Link to="/" className="text-white">
+                  Home
+                </Link>
+                <Link to="/all-posts" className="text-white">
+                  All Posts
+                </Link>
+                <Link to="/add-post" className="text-white">
+                  Add Post
+                </Link>
+                <Link to="/user-profile" className="text-white">
+                  Profile
+                </Link>
+              </div>
+
+              {/* Logout Button - Hidden on mobile */}
+              <button
+                onClick={logoutHandler}
+                className="hidden md:flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-md transition"
+                aria-label="Logout"
+              >
+                <FaSignOutAlt />
+                <span>Logout</span>
+              </button>
+            </>
+          ) : (
+            <div className="hidden md:flex items-center gap-x-6 ml-4">
+              <Link to="/" className="text-white">
+                Home
+              </Link>
+              <Link to="/login" className="text-white">
+                Login
+              </Link>
+              <Link to="/signup" className="text-white">
+                Signup
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile Menu Toggle */}
           <button
             className="md:hidden p-2 text-white focus:outline-none"
             onClick={toggleMenu}
@@ -106,71 +123,78 @@ function Header() {
           >
             {menuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
           </button>
-          <ul className="hidden md:flex items-center space-x-6">
-            {navItems.map((item) => (
-              <li key={item.name}>
-                {item.component ? (
-                  <span className="text-lg font-semibold">
-                    {item.component}
-                  </span>
-                ) : (
-                  <Link
-                    to={item.slug}
-                    className={`flex items-center text-lg font-semibold px-4 py-1 rounded-lg transition ${
-                      currentPath === item.slug
-                        ? "bg-purple-600 text-white"
-                        : "text-gray-300 hover:bg-purple-600 hover:text-white"
-                    }`}
-                  >
-                    {item.icon && item.icon}
-                    {item.name}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
         </div>
       </nav>
+
       {/* Mobile Menu */}
       <div
         className={`fixed top-0 right-0 h-full w-64 bg-gray-900 text-white z-50 transform transition-transform duration-300 ease-in-out ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <button
-          className="absolute top-4 right-4 p-2 text-lg text-white focus:outline-none"
-          onClick={toggleMenu}
-          aria-label="Close Menu"
-        >
-          <FaTimes size={24} />
-        </button>
-        <div className="relative p-4">
-          <SearchBar />
-        </div>
-        <ul className="flex flex-col items-start p-6 space-y-4 mt-4">
-          {navItems.map((item) => (
-            <li key={item.name} className="w-full">
-              {item.component ? (
-                <span className="text-lg font-semibold px-4 py-2 w-full text-left">
-                  {item.component}
-                </span>
-              ) : (
-                <Link
-                  to={item.slug}
-                  onClick={toggleMenu}
-                  className={`flex items-center text-lg font-semibold px-4 py-2 w-full text-left rounded-lg transition-all duration-300 ${
-                    currentPath === item.slug
-                      ? "bg-purple-600 text-white"
-                      : "text-gray-300 hover:bg-purple-600 hover:text-white"
-                  }`}
-                >
-                  {item.icon && item.icon}
-                  {item.name}
+        <div className="p-6">
+          <button
+            className="w-full flex justify-end mb-8 focus:outline-none"
+            onClick={toggleMenu}
+            aria-label="Close Menu"
+          >
+            <FaTimes size={24} />
+          </button>
+
+          {/* Mobile Navigation Links */}
+          <nav className="flex flex-col gap-6">
+            {isLoggedIn ? (
+              <>
+                <Link to="/" className="text-white" onClick={toggleMenu}>
+                  Home
                 </Link>
-              )}
-            </li>
-          ))}
-        </ul>
+                <Link
+                  to="/all-posts"
+                  className="text-white"
+                  onClick={toggleMenu}
+                >
+                  All Posts
+                </Link>
+                <Link
+                  to="/add-post"
+                  className="text-white"
+                  onClick={toggleMenu}
+                >
+                  Add Post
+                </Link>
+                <Link
+                  to="/user-profile"
+                  className="text-white"
+                  onClick={toggleMenu}
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    logoutHandler();
+                    toggleMenu();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-md transition"
+                >
+                  <FaSignOutAlt />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-6">
+                <Link to="/" className="text-white">
+                  Home
+                </Link>
+                <Link to="/login" className="text-white">
+                  Login
+                </Link>
+                <Link to="/signup" className="text-white">
+                  Signup
+                </Link>
+              </div>
+            )}
+          </nav>
+        </div>
       </div>
     </header>
   );
