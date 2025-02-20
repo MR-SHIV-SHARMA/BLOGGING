@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { FaBell, FaTrash, FaUserCircle } from "react-icons/fa";
+import { FaTrash, FaUserCircle } from "react-icons/fa";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 
 function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  // Store a mapping of actionUserId (_id) -> avatar URL
+  // Mapping of actionUserId (_id) -> avatar URL
   const [userAvatars, setUserAvatars] = useState({});
+  // Active filter tab: "all", "unread", or "read"
+  const [activeSection, setActiveSection] = useState("all");
 
-  // Toggle the dropdown and fetch notifications if opening
-  const toggleNotifications = async () => {
-    const newShow = !showNotifications;
-    setShowNotifications(newShow);
+  // Check if we're on the notifications page
+  const location = useLocation();
+  const isNotificationsPage = location.pathname === "/notifications";
 
-    if (newShow) {
+  // Compute counts for all notifications, unread, and read
+  const allCount = notifications.length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const readCount = notifications.filter((n) => n.isRead).length;
+
+  // Fetch notifications on mount (or when rendered as a page)
+  useEffect(() => {
+    const fetchNotifications = async () => {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("accessToken");
       if (userId && token) {
@@ -27,7 +34,6 @@ function NotificationDropdown() {
             }
           );
 
-          // Handle various response structures
           let fetchedNotifications = response.data;
           if (!Array.isArray(fetchedNotifications)) {
             if (Array.isArray(response.data.data)) {
@@ -45,8 +51,10 @@ function NotificationDropdown() {
       } else {
         console.error("User ID or Token not found in localStorage");
       }
-    }
-  };
+    };
+
+    fetchNotifications();
+  }, []);
 
   // Mark a single notification as read
   const markNotificationRead = async (notifId) => {
@@ -61,7 +69,6 @@ function NotificationDropdown() {
             withCredentials: true,
           }
         );
-        // Update state
         setNotifications((prevNotifications) =>
           prevNotifications.map((notif) =>
             notif._id === notifId ? { ...notif, isRead: true } : notif
@@ -77,7 +84,7 @@ function NotificationDropdown() {
 
   // Delete a single notification
   const deleteNotification = async (notifId, e) => {
-    // Prevent clicking the notification (which would mark it as read)
+    // Prevent triggering mark-as-read if clicked
     e.stopPropagation();
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -86,7 +93,6 @@ function NotificationDropdown() {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
-        // Remove from state
         setNotifications((prevNotifications) =>
           prevNotifications.filter((notif) => notif._id !== notifId)
         );
@@ -112,7 +118,6 @@ function NotificationDropdown() {
             withCredentials: true,
           }
         );
-        // Update state
         setNotifications((prevNotifications) =>
           prevNotifications.map((notif) => ({ ...notif, isRead: true }))
         );
@@ -143,27 +148,46 @@ function NotificationDropdown() {
     }
   };
 
-  // Count of unread notifications
-  const unreadCount = notifications.filter((notif) => !notif.isRead).length;
+  // Filter notifications based on active section
+  const filteredNotifications = notifications.filter((notif) => {
+    if (activeSection === "unread") return !notif.isRead;
+    if (activeSection === "read") return notif.isRead;
+    return true;
+  });
 
-  // Fetch user avatars for each notification using the actionUserId from the notification
+  // Group notifications by date (Today, Yesterday, or locale date string)
+  const groupedNotifications = filteredNotifications.reduce((groups, notif) => {
+    const notifDate = new Date(notif.createdAt);
+    const today = new Date();
+    let groupName = notifDate.toLocaleDateString();
+    if (notifDate.toDateString() === today.toDateString()) {
+      groupName = "Today";
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      if (notifDate.toDateString() === yesterday.toDateString()) {
+        groupName = "Yesterday";
+      }
+    }
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(notif);
+    return groups;
+  }, {});
+
+  // Fetch user avatars for the notifications (if not already present)
   useEffect(() => {
     async function fetchAvatars() {
       const token = localStorage.getItem("accessToken");
-      // Get all action user IDs from notifications that don't already have an avatar
       const newUserIds = notifications
         .map((notif) => notif.actionUserId?._id)
         .filter((id) => id && !userAvatars[id]);
       const uniqueUserIds = [...new Set(newUserIds)];
 
       for (let id of uniqueUserIds) {
-        console.log("Fetching avatar for id: " + id);
         try {
           const response = await axios.get(`/user/profile/view/${id}`, {
             headers: { Authorization: token ? `Bearer ${token}` : "" },
           });
-
-          // Assume that response.data.data has an "avatar" property
           if (response.data && response.data.data.avatar) {
             setUserAvatars((prev) => ({
               ...prev,
@@ -178,95 +202,129 @@ function NotificationDropdown() {
     if (notifications.length > 0) {
       fetchAvatars();
     }
-  }, [notifications, userAvatars]);
+  }, [notifications]);
 
   return (
-    <div className="relative">
-      <button
-        onClick={toggleNotifications}
-        className="relative flex items-center justify-center gap-2 p-2"
-        aria-label="Notifications"
-      >
-        <FaBell
-          size={24}
-          className="text-white hover:text-gray-300 transition"
-        />
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-
-      {showNotifications && (
-        <div className="absolute -right-14 mt-1 sm:mt-3 w-[90vw] max-w-sm bg-white text-black rounded-lg shadow-lg z-50 divide-y sm:w-80">
-          {/* Header */}
-          <div className="px-4 py-2 border-b flex justify-between items-center bg-gray-100">
-            <h3 className="text-lg font-bold text-gray-800">Notifications</h3>
-            <div className="flex space-x-2">
-              <button
-                onClick={markAllNotificationsRead}
-                className="text-sm text-blue-500 hover:text-blue-700 transition"
-              >
-                Mark all as read
-              </button>
-              <button
-                onClick={deleteAllNotifications}
-                className="text-sm text-red-500 hover:text-red-700 transition"
-              >
-                Delete all
-              </button>
-            </div>
-          </div>
-          <div className="max-h-60 overflow-y-auto p-4 space-y-2">
-            {notifications.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center">
-                No notifications
-              </p>
-            ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif._id}
-                  onClick={() => markNotificationRead(notif._id)}
-                  className={`flex justify-between items-start p-3 rounded-lg hover:bg-gray-100 cursor-pointer transition ${
-                    !notif.isRead ? "bg-gray-200" : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <Link
-                      to={`/api/v1/user/profile/view/f/${notif.actionUserId._id}`}
-                      className="group relative"
-                    >
-                      {notif.actionUserId &&
-                      userAvatars[notif.actionUserId._id] ? (
-                        <img
-                          src={userAvatars[notif.actionUserId._id]}
-                          alt="User Avatar"
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <FaUserCircle size={40} className="text-gray-400" />
-                      )}
-                    </Link>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">
-                        {notif.message}
-                      </p>
-                      <span className="block text-xs text-gray-500 mt-1">
-                        {new Date(notif.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  <FaTrash
-                    onClick={(e) => deleteNotification(notif._id, e)}
-                    className="text-red-500 hover:text-red-700 cursor-pointer transition"
-                  />
-                </div>
-              ))
-            )}
+    <div className="w-full">
+      {/* Notifications Panel */}
+      <div className="bg-white shadow-xl rounded-lg w-full mt-4 max-h-[80vh]">
+        {/* Header */}
+        <div className="p-4 border-b flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Notifications</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={markAllNotificationsRead}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Mark all read
+            </button>
+            <button
+              onClick={deleteAllNotifications}
+              className="text-red-600 hover:text-red-800 text-sm"
+            >
+              Clear all
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 p-3 border-b">
+          {["all", "unread", "read"].map((section) => {
+            let count =
+              section === "all"
+                ? allCount
+                : section === "unread"
+                ? unreadCount
+                : readCount;
+            return (
+              <button
+                key={section}
+                onClick={() => setActiveSection(section)}
+                className={`
+                  px-3 py-1 rounded-full capitalize text-sm
+                  ${
+                    activeSection === section
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }
+                `}
+              >
+                {section} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Notifications List */}
+        <div className="overflow-y-auto p-2">
+          {Object.entries(groupedNotifications).map(([groupName, notifs]) => (
+            <div key={groupName} className="mb-4">
+              <h4 className="text-sm font-medium text-gray-500 px-2 py-1">
+                {groupName}
+              </h4>
+              <div className="space-y-2">
+                {notifs.map((notif) => (
+                  <div
+                    key={notif._id}
+                    onClick={() => {
+                      if (!notif.isRead) markNotificationRead(notif._id);
+                    }}
+                    className={`flex items-start p-2 rounded-lg hover:bg-gray-50 cursor-pointer ${
+                      !notif.isRead ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    {/* User Avatar */}
+                    <div className="shrink-0 mr-3">
+                      <Link
+                        to={`/api/v1/user/profile/view/f/${notif.actionUserId?._id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {userAvatars[notif.actionUserId?._id] ? (
+                          <img
+                            src={userAvatars[notif.actionUserId._id]}
+                            className="w-10 h-10 rounded-full object-cover"
+                            alt="User avatar"
+                          />
+                        ) : (
+                          <FaUserCircle className="text-gray-400 w-10 h-10" />
+                        )}
+                      </Link>
+                    </div>
+
+                    {/* Notification Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 line-clamp-2">
+                        {notif.message}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(notif.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => deleteNotification(notif._id, e)}
+                      className="shrink-0 p-2 hover:text-red-700 ml-2"
+                      aria-label="Delete notification"
+                    >
+                      <FaTrash className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {filteredNotifications.length === 0 && (
+            <div className="text-center p-4 text-gray-500 text-sm">
+              No notifications found
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

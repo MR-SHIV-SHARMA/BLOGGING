@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaBars, FaTimes, FaSignOutAlt, FaUser, FaTrash } from "react-icons/fa";
-import NotificationDropdown from "./NotificationDropdown";
+import {
+  FaBars,
+  FaTimes,
+  FaSignOutAlt,
+  FaUser,
+  FaTrash,
+  FaBell,
+} from "react-icons/fa";
 import Cookies from "js-cookie";
 import SearchBar from "./SearchBar";
 import axios from "axios";
@@ -10,12 +16,56 @@ function Header() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // New state to hold unread notifications count for header
+  const [notificationCount, setNotificationCount] = useState(0);
 
   // Check if the user is logged in by looking for the accessToken in localStorage.
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     setIsLoggedIn(!!token);
   }, []);
+
+  // Fetch notifications for logged-in user to update unread count on the bell icon.
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("accessToken");
+      if (userId && token) {
+        try {
+          const response = await axios.get(
+            `/interactions/notifications/${userId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true,
+            }
+          );
+          let fetchedNotifications = response.data;
+          if (!Array.isArray(fetchedNotifications)) {
+            if (Array.isArray(response.data.data)) {
+              fetchedNotifications = response.data.data;
+            } else if (Array.isArray(response.data.notifications)) {
+              fetchedNotifications = response.data.notifications;
+            } else {
+              fetchedNotifications = [];
+            }
+          }
+          // Update the notification count with unread notifications
+          const unread = fetchedNotifications.filter(
+            (notif) => !notif.isRead
+          ).length;
+          setNotificationCount(unread);
+        } catch (error) {
+          console.error("Failed to fetch notifications in Header", error);
+        }
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchNotifications();
+    } else {
+      setNotificationCount(0);
+    }
+  }, [isLoggedIn]);
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
@@ -70,9 +120,16 @@ function Header() {
                 <SearchBar />
               </div>
 
-              {/* Notification - Always visible */}
-              <div className="flex justify-center items-center">
-                <NotificationDropdown />
+              {/* Notification Bell with unread count badge */}
+              <div className="relative flex justify-center items-center text-white">
+                <Link to="/notifications">
+                  <FaBell size={24} />
+                  {notificationCount > 0 && (
+                    <span className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-white rounded-full h-5 w-5 text-xs flex items-center justify-center">
+                      {notificationCount}
+                    </span>
+                  )}
+                </Link>
               </div>
 
               {/* Desktop Links - Hidden on mobile */}

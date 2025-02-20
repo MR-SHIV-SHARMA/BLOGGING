@@ -1,12 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import axios from "axios"; // ✅ Axios Import किया
 import "./index.css";
 
 axios.defaults.baseURL = "https://bg-io.vercel.app/api/v1";
 // axios.defaults.baseURL = "http://localhost:3000/api/v1";
-console.log("Axios Base URL Set:", axios.defaults.baseURL);
 
 import Signup from "./components/Signup";
 import Login from "./components/Login";
@@ -21,10 +20,14 @@ import ResetPassword from "./components/ResetPassword";
 import AccountRestoration from "./components/AccountRestoration";
 import PublicUserProfile from "./components/PublicUserProfile";
 import SearchResultsPage from "./components/SearchResultsPage";
+import NotificationDropdown from "./components/NotificationDropdown";
 
 function App() {
+  // Get the current location to conditionally render the footer
+  const location = useLocation();
+
   return (
-    <BrowserRouter>
+    <>
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -41,14 +44,18 @@ function App() {
           element={<PublicUserProfile />}
         />
         <Route path="/search-results" element={<SearchResultsPage />} />
+        <Route path="/notifications" element={<NotificationDropdown />} />
       </Routes>
-      <Footer />
-    </BrowserRouter>
+      {/* Conditionally render the Footer only on pages other than "/notifications" */}
+      {location.pathname !== "/notifications" && <Footer />}
+    </>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
