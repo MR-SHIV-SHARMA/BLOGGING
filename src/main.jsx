@@ -4,11 +4,15 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import axios from "axios"; // ✅ Axios Import किया
 import "./index.css";
 import Cookies from "js-cookie";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./Routes/ProtectedRoute";
+import { PublicRoute } from "./Routes/PublicRoute";
+import { NotificationProvider } from './context/NotificationContext';
 
 // Update axios defaults
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "https://bg-io.vercel.app/api/v1";
-// axios.defaults.baseURL = "http://localhost:3000/api/v1";
+// axios.defaults.baseURL = "https://bg-io.vercel.app/api/v1";
+axios.defaults.baseURL = "http://localhost:3000/api/v1";
 
 import Signup from "./components/Signup";
 import Login from "./components/Login";
@@ -30,35 +34,81 @@ function App() {
   const location = useLocation();
 
   return (
-    <>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/post/:slug" element={<PostDetail />} />
-        <Route path="/all-posts" element={<AllPosts />} />
-        <Route path="/add-post" element={<AddPost />} />
-        <Route path="/user-profile" element={<UserProfileCard />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/account-restoration" element={<AccountRestoration />} />
-        <Route
-          path="/api/v1/user/profile/view/f/:userId"
-          element={<PublicUserProfile />}
-        />
-        <Route path="/search-results" element={<SearchResultsPage />} />
-        <Route path="/notifications" element={<NotificationDropdown />} />
-      </Routes>
-      {/* Conditionally render the Footer only on pages other than "/notifications" */}
-      {location.pathname !== "/notifications" && <Footer />}
-    </>
+    <AuthProvider>
+      <NotificationProvider>
+        <Header />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+
+          {/* Auth Routes - Redirect to home if logged in */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <Signup />
+              </PublicRoute>
+            }
+          />
+
+          {/* Protected Routes - Redirect to login if not authenticated */}
+          <Route
+            path="/add-post"
+            element={
+              <ProtectedRoute>
+                <AddPost />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/user-profile"
+            element={
+              <ProtectedRoute>
+                <UserProfileCard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationDropdown />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/post/:slug" element={<PostDetail />} />
+          <Route path="/all-posts" element={<AllPosts />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/account-restoration" element={<AccountRestoration />} />
+          <Route
+            path="/api/v1/user/profile/view/f/:userId"
+            element={<PublicUserProfile />}
+          />
+          <Route path="/search-results" element={<SearchResultsPage />} />
+        </Routes>
+        {/* Conditionally render the Footer only on pages other than "/notifications" */}
+        {location.pathname !== "/notifications" && <Footer />}
+      </NotificationProvider>
+    </AuthProvider>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

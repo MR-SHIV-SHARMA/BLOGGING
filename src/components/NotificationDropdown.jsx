@@ -1,147 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { FaTrash, FaUserCircle } from "react-icons/fa";
-import axios from "axios";
 import { useLocation, Link } from "react-router-dom";
+import { useNotifications } from "../context/NotificationContext";
 import Cookies from "js-cookie";
+import axios from "axios";
 
 function NotificationDropdown() {
-  const [notifications, setNotifications] = useState([]);
-  // Mapping of actionUserId (_id) -> avatar URL
   const [userAvatars, setUserAvatars] = useState({});
-  // Active filter tab: "all", "unread", or "read"
   const [activeSection, setActiveSection] = useState("all");
-
-  // Check if we're on the notifications page
   const location = useLocation();
-  const isNotificationsPage = location.pathname === "/notifications";
 
-  // Compute counts for all notifications, unread, and read
-  const allCount = notifications.length;
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-  const readCount = notifications.filter((n) => n.isRead).length;
+  const notificationContext = useNotifications();
+  const {
+    notifications = [],
+    counts = { all: 0, unread: 0, read: 0 },
+    fetchNotifications,
+    markNotificationRead,
+    markAllRead,
+    deleteNotification,
+    deleteAllNotifications,
+  } = notificationContext || {};
 
-  // Fetch notifications on mount (or when rendered as a page)
+  // Fetch notifications on mount
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const userId = Cookies.get("userId");
-      const token = Cookies.get("accessToken");
-
-      if (userId && token) {
-        try {
-          const response = await axios.get(
-            `/interactions/notifications/${userId}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          if (response.data.success && Array.isArray(response.data.data)) {
-            setNotifications(response.data.data);
-          } else {
-            setNotifications([]);
-          }
-        } catch (error) {
-          setNotifications([]);
-        }
-      } else {
-        setNotifications([]);
-      }
-    };
-
     fetchNotifications();
   }, []);
-
-  // Mark a single notification as read
-  const markNotificationRead = async (notifId) => {
-    const token = Cookies.get("accessToken");
-    if (token) {
-      try {
-        await axios.patch(
-          `/interactions/notifications/read/${notifId}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notif) =>
-            notif._id === notifId ? { ...notif, isRead: true } : notif
-          )
-        );
-      } catch (error) {
-        console.error("Failed to mark notification as read", error);
-      }
-    } else {
-      console.error("Access token not found");
-    }
-  };
-
-  // Delete a single notification
-  const deleteNotification = async (notifId, e) => {
-    // Prevent triggering mark-as-read if clicked
-    e.stopPropagation();
-    const token = Cookies.get("accessToken");
-    if (token) {
-      try {
-        await axios.delete(`/interactions/notifications/${notifId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        setNotifications((prevNotifications) =>
-          prevNotifications.filter((notif) => notif._id !== notifId)
-        );
-      } catch (error) {
-        console.error("Failed to delete notification", error);
-      }
-    } else {
-      console.error("Access token not found");
-    }
-  };
-
-  // Mark all notifications as read
-  const markAllNotificationsRead = async () => {
-    const userId = Cookies.get("userId");
-    const token = Cookies.get("accessToken");
-    if (userId && token) {
-      try {
-        await axios.patch(
-          `/interactions/notifications/read/all/${userId}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notif) => ({ ...notif, isRead: true }))
-        );
-      } catch (error) {
-        console.error("Failed to mark all notifications as read", error);
-      }
-    } else {
-      console.error("User ID or Token not found in localStorage");
-    }
-  };
-
-  // Delete all notifications
-  const deleteAllNotifications = async () => {
-    const userId = Cookies.get("userId");
-    const token = Cookies.get("accessToken");
-    if (userId && token) {
-      try {
-        await axios.delete(`/interactions/notifications/all/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        setNotifications([]);
-      } catch (error) {
-        console.error("Failed to delete all notifications", error);
-      }
-    } else {
-      console.error("User ID or Token not found in localStorage");
-    }
-  };
 
   // Filter notifications based on active section
   const filteredNotifications = notifications.filter((notif) => {
@@ -208,7 +91,7 @@ function NotificationDropdown() {
           <h3 className="text-lg font-semibold">Notifications</h3>
           <div className="flex gap-2">
             <button
-              onClick={markAllNotificationsRead}
+              onClick={markAllRead}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
               Mark all read
@@ -224,30 +107,22 @@ function NotificationDropdown() {
 
         {/* Filter Tabs */}
         <div className="flex gap-2 p-3 border-b">
-          {["all", "unread", "read"].map((section) => {
-            let count =
-              section === "all"
-                ? allCount
-                : section === "unread"
-                ? unreadCount
-                : readCount;
-            return (
-              <button
-                key={section}
-                onClick={() => setActiveSection(section)}
-                className={`
-                  px-3 py-1 rounded-full capitalize text-sm
-                  ${
-                    activeSection === section
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }
-                `}
-              >
-                {section} ({count})
-              </button>
-            );
-          })}
+          {["all", "unread", "read"].map((section) => (
+            <button
+              key={section}
+              onClick={() => setActiveSection(section)}
+              className={`
+                px-3 py-1 rounded-full capitalize text-sm
+                ${
+                  activeSection === section
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }
+              `}
+            >
+              {section} ({counts[section]})
+            </button>
+          ))}
         </div>
 
         {/* Notifications List */}
@@ -301,7 +176,7 @@ function NotificationDropdown() {
 
                     {/* Delete Button */}
                     <button
-                      onClick={(e) => deleteNotification(notif._id, e)}
+                      onClick={(e) => deleteNotification(notif._id)}
                       className="shrink-0 p-2 hover:text-red-700 ml-2"
                       aria-label="Delete notification"
                     >
