@@ -12,7 +12,7 @@ function HelpCenter() {
         description:
           "If your account has been deactivated, you can request reactivation by following these steps:",
         steps: [
-          "Click on the \"Request Account Restoration\" button below",
+          'Click on the "Request Account Restoration" button below',
           "Enter your registered email address",
           "Submit the form and wait for our response",
           "Our team will review your request within 24-48 hours",
@@ -20,12 +20,12 @@ function HelpCenter() {
         contact: "For urgent assistance, call us at: +1-XXX-XXX-XXXX",
         action: (
           <Link
-            to="/account-restoration"
+            to="/account-restoration-request"
             className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Request Account Restoration
           </Link>
-        )
+        ),
       },
       {
         title: "Password Reset",
@@ -150,11 +150,7 @@ function HelpCenter() {
               {item.contact && (
                 <p className="mt-4 text-blue-600 font-medium">{item.contact}</p>
               )}
-              {item.action && (
-                <div className="mt-4">
-                  {item.action}
-                </div>
-              )}
+              {item.action && <div className="mt-4">{item.action}</div>}
             </div>
           ))}
         </div>

@@ -42,7 +42,7 @@ function Signup() {
 
       console.log("Signup success", response.data);
       toast.success("Please check your email", { autoClose: 15000 });
-      navigate("/Account_verification_email");
+      navigate("/login");
     } catch (err) {
       console.error("Signup failed", err);
       setError(err.response?.data?.message || "Signup failed. Try again.");

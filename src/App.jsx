@@ -17,6 +17,8 @@ import SearchResultsPage from "./components/SearchResultsPage";
 import { ProtectedRoute } from "./Routes/ProtectedRoute";
 import { PublicRoute } from "./Routes/PublicRoute";
 import HelpCenter from "./components/HelpCenter";
+import RestoreAccount from "./components/RestoreAccount";
+import EmailVerification from "./components/EmailVerification";
 
 function App() {
   const location = useLocation();
@@ -27,6 +29,11 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
+        <Route path="/post/:slug" element={<PostDetail />} />
+        <Route path="/all-posts" element={<AllPosts />} />
+        <Route path="/help" element={<HelpCenter />} />
+        <Route path="/user/profile/:userId" element={<PublicUserProfile />} />
+        <Route path="/search-results" element={<SearchResultsPage />} />
 
         {/* Auth Routes */}
         <Route
@@ -71,16 +78,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/post/:slug" element={<PostDetail />} />
-        <Route path="/all-posts" element={<AllPosts />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/account-restoration" element={<AccountRestoration />} />
+
+        {/* Account Management Routes */}
         <Route
-          path="/api/v1/user/profile/view/f/:userId"
-          element={<PublicUserProfile />}
+          path="/account-restoration-request"
+          element={<AccountRestoration />}
         />
-        <Route path="/search-results" element={<SearchResultsPage />} />
-        <Route path="/help" element={<HelpCenter />} />
+        <Route path="/verify-email/:token" element={<EmailVerification />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/restore-account/:token" element={<RestoreAccount />} />
       </Routes>
       {location.pathname !== "/notifications" && <Footer />}
     </>
