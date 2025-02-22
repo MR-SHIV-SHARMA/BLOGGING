@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  createContext,
+  useContext,
+} from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
@@ -171,6 +177,204 @@ function DeleteAccountModal({
 
 /* ------------------------- Main Profile Component ------------------------- */
 
+const UserProfileContext = createContext();
+
+export const UserProfileProvider = ({ children }) => {
+  const [userProfile, setUserProfile] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const token = Cookies.get("accessToken");
+      const userId = Cookies.get("userId");
+
+      if (!token || !userId) {
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get(
+        `/interactions/notifications/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data?.success) {
+        setNotifications(response.data.data);
+      } else {
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      toast.error("Failed to fetch notifications");
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchUserProfile();
+    fetchNotifications();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    const token = Cookies.get("accessToken");
+    const userId = Cookies.get("userId");
+    if (!token || !userId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`/user/profile/view/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserProfile(response.data?.data);
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    const token = Cookies.get("accessToken");
+    try {
+      const response = await axios.patch(
+        `/interactions/notifications/read/${notificationId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setNotifications((prev) =>
+          prev.map((notif) =>
+            notif._id === notificationId ? { ...notif, isRead: true } : notif
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+      toast.error("Failed to mark notification as read");
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    const token = Cookies.get("accessToken");
+    try {
+      const response = await axios.delete(
+        `/interactions/notifications/${notificationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setNotifications((prev) =>
+          prev.filter((notif) => notif._id !== notificationId)
+        );
+        toast.success("Notification deleted");
+      }
+    } catch (err) {
+      console.error("Error deleting notification:", err);
+      toast.error("Failed to delete notification");
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    const token = Cookies.get("accessToken");
+    const userId = Cookies.get("userId");
+
+    if (!token || !userId) {
+      return;
+    }
+
+    try {
+      const response = await axios.patch(
+        `/interactions/notifications/read/all/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setNotifications((prev) =>
+          prev.map((notification) => ({ ...notification, isRead: true }))
+        );
+        toast.success("All notifications marked as read");
+      }
+    } catch (err) {
+      console.error("Error clearing notifications:", err);
+      toast.error("Failed to clear notifications");
+    }
+  };
+
+  // Update profile
+  const updateProfile = async (profileData) => {
+    const token = Cookies.get("accessToken");
+    try {
+      const response = await axios.put("/user/profile/update", profileData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserProfile(response.data?.data);
+      toast.success("Profile updated successfully");
+      return response.data?.data;
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      toast.error("Failed to update profile");
+      throw err;
+    }
+  };
+
+  // Refresh data
+  const refreshData = () => {
+    fetchUserProfile();
+    fetchNotifications();
+  };
+
+  const value = {
+    userProfile,
+    notifications,
+    loading,
+    updateProfile,
+    fetchNotifications,
+    markNotificationAsRead,
+    deleteNotification,
+    clearAllNotifications,
+    refreshData,
+  };
+
+  return (
+    <UserProfileContext.Provider value={value}>
+      {children}
+      <ToastContainer />
+    </UserProfileContext.Provider>
+  );
+};
+
+export const useUserProfile = () => {
+  const context = useContext(UserProfileContext);
+  if (!context) {
+    throw new Error("useUserProfile must be used within a UserProfileProvider");
+  }
+  return context;
+};
+
 function UserProfileCard() {
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -196,13 +400,16 @@ function UserProfileCard() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState("");
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-  const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   const avatarInputRef = useRef(null);
   const coverImageInputRef = useRef(null);
 
   useEffect(() => {
     const token = Cookies.get("accessToken");
+    if (!token) {
+      toast.error("No access token found");
+      return;
+    }
 
     axios
       .get("/user/profile/view", {
@@ -212,9 +419,6 @@ function UserProfileCard() {
         const data = response.data;
         if (data.success) {
           const profileData = data.data || {};
-          if (!profileData || Object.keys(profileData).length === 0) {
-            toast.info("Profile not created yet. Please update your profile.");
-          }
           setProfile(profileData);
           setFullname(profileData.fullname || "");
           setBio(profileData.bio || "");
@@ -223,31 +427,12 @@ function UserProfileCard() {
           setLink(profileData.link || "");
           setSocialMedia(profileData.socialMedia || "");
         } else {
-          const lowerMsg = data.message ? data.message.toLowerCase() : "";
-          if (
-            lowerMsg.includes("not found") ||
-            lowerMsg.includes("not exist")
-          ) {
-            toast.info("Profile not created yet. Please update your profile.");
-            setProfile({});
-          } else {
-            toast.error(data.message || "Failed to fetch profile");
-          }
+          toast.error(data.message || "Failed to fetch profile");
         }
       })
       .catch((error) => {
-        const errMsg =
-          error.response?.data?.message?.toLowerCase() || error.message || "";
-        if (
-          error.response?.status === 404 ||
-          errMsg.includes("not found") ||
-          errMsg.includes("no profile")
-        ) {
-          setProfile({});
-          toast.info("Profile not created yet. Please update your profile.");
-        } else {
-          console.error("Error fetching profile:", error);
-        }
+        console.error("Error fetching profile:", error);
+        toast.error("Error fetching profile");
       });
   }, []);
 
@@ -288,7 +473,7 @@ function UserProfileCard() {
       .then((response) => {
         const data = response.data.data;
         if (response.data.success) {
-          setCurrentUserProfile(data);
+          setProfile(data);
         } else {
           toast.error(
             response.data.message || "Failed to fetch current user profile"
@@ -300,36 +485,41 @@ function UserProfileCard() {
       });
   }, []);
 
-  const handleProfileUpdate = () => {
+  const handleProfileUpdate = async () => {
     const token = Cookies.get("accessToken");
+    if (!token) {
+      toast.error("No access token found");
+      return;
+    }
 
-    const updateData = {
-      fullname,
-      bio,
-      location,
-      hobbies,
-      link,
-      socialMedia,
-    };
+    try {
+      const updateData = {
+        fullname,
+        bio,
+        location,
+        hobbies,
+        link,
+        socialMedia,
+      };
 
-    axios
-      .patch("/user/profile/media", updateData, {
+      const response = await axios.patch("/user/profile/media", updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      })
-      .then((response) => {
-        const data = response.data;
-        if (data.success) {
-          toast.success("Profile updated successfully!");
-          setProfile((prev) => ({ ...prev, ...updateData }));
-          setIsEditing(false);
-        } else {
-          toast.error(data.message || "Failed to update profile");
-        }
-      })
-      .catch(() => toast.error("Error updating profile"));
+      });
+
+      if (response.data.success) {
+        toast.success("Profile updated successfully!");
+        setProfile((prev) => ({ ...prev, ...updateData }));
+        setIsEditing(false);
+      } else {
+        toast.error(response.data.message || "Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Error updating profile");
+    }
   };
 
   const handleCoverImageChange = (e) => {
@@ -347,30 +537,43 @@ function UserProfileCard() {
   };
 
   const uploadAvatar = async () => {
-    if (!avatarFile) return;
+    if (!avatarFile) {
+      toast.error("Please select an avatar file");
+      return;
+    }
+
+    const token = Cookies.get("accessToken");
+    if (!token) {
+      toast.error("No access token found");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("avatar", avatarFile);
 
-    const token = Cookies.get("accessToken");
-
-    await axios
-      .patch("/user/profile/media/update-avatar", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((response) => {
-        const data = response.data;
-        if (data.success) {
-          toast.success("Avatar updated successfully!");
-          setProfile((prev) => ({ ...prev, avatar: data.avatarUrl }));
-          setAvatarFile(null);
-        } else {
-          toast.error(data.message || "Failed to update avatar");
+    try {
+      const response = await axios.patch(
+        "/user/profile/media/update-avatar",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
         }
-      })
-      .catch(() => toast.error("Error updating avatar"));
+      );
+
+      if (response.data.success) {
+        toast.success("Avatar updated successfully!");
+        setProfile((prev) => ({ ...prev, avatar: response.data.avatarUrl }));
+        setAvatarFile(null);
+      } else {
+        toast.error(response.data.message || "Failed to update avatar");
+      }
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+      toast.error("Error updating avatar");
+    }
   };
 
   const uploadCoverImage = () => {
@@ -642,31 +845,33 @@ function UserProfileCard() {
   const handleDeleteAccount = async () => {
     const token = Cookies.get("accessToken");
     if (!token) {
-      toast.error("Access token not found.");
+      toast.error("Access token not found");
       return;
     }
 
-    // Ensure we have the current user data with an email
-    if (!currentUserProfile || !currentUserProfile.email) {
-      toast.error("Current user data is not available.");
+    if (!profile?.email) {
+      toast.error("User email not found");
       return;
     }
 
-    // Use the email from the current user profile for confirmation
-    if (deleteConfirmationEmail.trim() !== currentUserProfile.email) {
-      toast.error("Entered email does not match your account email.");
+    if (deleteConfirmationEmail.trim() !== profile.email) {
+      toast.error("Email confirmation does not match");
       return;
     }
 
     try {
       const response = await axios.delete("/user/account/delete-account", {
-        data: { email: currentUserProfile.email },
+        data: { email: profile.email },
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.success) {
-        toast.success("Account deleted successfully!");
-        // Optionally, add your redirection or localStorage clearing logic here
+        toast.success("Account deleted successfully");
+        // Clear cookies and local storage
+        Cookies.remove("accessToken");
+        Cookies.remove("userId");
+        // Redirect to home page or login page
+        window.location.href = "/login";
       } else {
         toast.error(response.data.message || "Failed to delete account");
       }

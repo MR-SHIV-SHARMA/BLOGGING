@@ -1,175 +1,170 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import axios from "axios";
-import Cookies from "js-cookie";
-import { useAuth } from "./AuthContext"; // Import useAuth
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import Cookies from 'js-cookie';
 
 const NotificationContext = createContext();
 
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
-  const [counts, setCounts] = useState({
-    all: 0,
-    unread: 0,
-    read: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useAuth(); // Get authentication status
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch notifications whenever auth status changes
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchInitialNotifications();
-    } else {
-      // Reset notifications when logged out
-      setNotifications([]);
-      setCounts({ all: 0, unread: 0, read: 0 });
-    }
-  }, [isAuthenticated]); // Add isAuthenticated as dependency
-
-  const fetchInitialNotifications = async () => {
-    const userId = Cookies.get("userId");
-    const token = Cookies.get("accessToken");
-
-    if (userId && token) {
-      try {
-        setIsLoading(true);
-        const response = await axios.get(
-          `/interactions/notifications/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        if (response.data.success && Array.isArray(response.data.data)) {
-          setNotifications(response.data.data);
-          const unreadCount = response.data.data.filter(
-            (n) => !n.isRead
-          ).length;
-          setCounts({
-            all: response.data.data.length,
-            unread: unreadCount,
-            read: response.data.data.length - unreadCount,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-        setNotifications([]);
-        setCounts({ all: 0, unread: 0, read: 0 });
-      } finally {
-        setIsLoading(false);
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const token = Cookies.get('accessToken');
+      const userId = Cookies.get('userId');
+      
+      if (!token || !userId) {
+        console.log('No token or userId found');
+        return [];
       }
-    } else {
-      setIsLoading(false);
+
+      const response = await axios.get(`/interactions/notifications/${userId}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        const notifs = response.data.data || [];
+        const unread = notifs.filter(n => !n.isRead).length;
+        
+        setNotifications(notifs);
+        setUnreadCount(unread);
+        return notifs;
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch notifications');
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      toast.error('Failed to fetch notifications');
+      return [];
     }
-  };
+  }, []);
 
-  // Regular fetch notifications function (for manual refresh)
-  const fetchNotifications = async () => {
-    await fetchInitialNotifications();
-  };
+  const markAsRead = useCallback(async (notificationId) => {
+    try {
+      const token = Cookies.get('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
+      }
 
-  const markNotificationRead = async (notifId) => {
-    const token = Cookies.get("accessToken");
-    if (token) {
-      try {
-        await axios.patch(
-          `/interactions/notifications/read/${notifId}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
+      const response = await axios.patch(
+        `/interactions/notifications/read/${notificationId}`,
+        {},
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        );
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notif) =>
-            notif._id === notifId ? { ...notif, isRead: true } : notif
+        }
+      );
+
+      if (response.data.success) {
+        setNotifications(prev =>
+          prev.map(notification =>
+            notification._id === notificationId
+              ? { ...notification, isRead: true }
+              : notification
           )
         );
-        // Update counts after marking as read
-        setCounts((prev) => ({
-          ...prev,
-          unread: prev.unread - 1,
-          read: prev.read + 1,
-        }));
-      } catch (error) {
-        console.error("Failed to mark notification as read", error);
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        toast.success('Notification marked as read');
       }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast.error('Failed to mark notification as read');
     }
-  };
+  }, []);
 
-  const markAllRead = async () => {
-    const userId = Cookies.get("userId");
-    const token = Cookies.get("accessToken");
-    if (userId && token) {
-      try {
-        await axios.patch(
-          `/interactions/notifications/read/all/${userId}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
+  const markAllAsRead = useCallback(async () => {
+    try {
+      const token = Cookies.get('accessToken');
+      const userId = Cookies.get('userId');
+      
+      if (!token || !userId) {
+        throw new Error('No access token or userId found');
+      }
+
+      const response = await axios.patch(
+        `/interactions/notifications/read/all/${userId}`,
+        {},
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        );
-        setNotifications((prev) =>
-          prev.map((notif) => ({ ...notif, isRead: true }))
-        );
-      } catch (error) {
-        console.error("Failed to mark all notifications as read", error);
-      }
-    }
-  };
+        }
+      );
 
-  const deleteNotification = async (notifId) => {
-    const token = Cookies.get("accessToken");
-    if (token) {
-      try {
-        await axios.delete(`/interactions/notifications/${notifId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        setNotifications((prev) =>
-          prev.filter((notif) => notif._id !== notifId)
+      if (response.data.success) {
+        setNotifications(prev =>
+          prev.map(notification => ({ ...notification, isRead: true }))
         );
-      } catch (error) {
-        console.error("Failed to delete notification", error);
+        setUnreadCount(0);
+        toast.success('All notifications marked as read');
       }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast.error('Failed to mark all notifications as read');
     }
-  };
+  }, []);
 
-  const deleteAllNotifications = async () => {
-    const userId = Cookies.get("userId");
-    const token = Cookies.get("accessToken");
-    if (userId && token) {
-      try {
-        await axios.delete(`/interactions/notifications/all/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        setNotifications([]);
-      } catch (error) {
-        console.error("Failed to delete all notifications", error);
+  const deleteNotification = useCallback(async (notificationId) => {
+    try {
+      const token = Cookies.get('accessToken');
+      if (!token) {
+        throw new Error('No access token found');
       }
+
+      const response = await axios.delete(
+        `/interactions/notifications/${notificationId}`,
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setNotifications(prev => 
+          prev.filter(notification => notification._id !== notificationId)
+        );
+        setUnreadCount(prev => 
+          prev - (notifications.find(n => n._id === notificationId)?.isRead ? 0 : 1)
+        );
+        toast.success('Notification deleted');
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
     }
+  }, [notifications]);
+
+  const value = {
+    notifications,
+    unreadCount,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    setNotifications,
+    setUnreadCount
   };
 
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        counts,
-        isLoading,
-        fetchNotifications: fetchInitialNotifications, // Rename for clarity
-        markNotificationRead,
-        markAllRead,
-        deleteNotification,
-        deleteAllNotifications,
-      }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
 }
 
 export function useNotifications() {
-  return useContext(NotificationContext);
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
 }

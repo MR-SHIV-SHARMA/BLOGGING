@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaBars,
@@ -11,12 +11,22 @@ import SearchBar from "./SearchBar";
 import axios from "axios";
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { toast } from 'react-hot-toast';
 
 function Header() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated, logout } = useAuth();
-  const { counts, isLoading } = useNotifications();
+  const { notifications, unreadCount, fetchNotifications } = useNotifications();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications().catch(error => {
+        console.error('Failed to fetch notifications:', error);
+      });
+    }
+  }, [isAuthenticated, fetchNotifications]);
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
@@ -41,8 +51,16 @@ function Header() {
 
       logout();
       navigate("/login");
+      toast.success('Logged out successfully');
     } catch (error) {
       console.error("Logout failed", error);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search-results?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -73,9 +91,9 @@ function Header() {
               <div className="relative flex justify-center items-center text-white">
                 <Link to="/notifications">
                   <FaBell size={24} />
-                  {!isLoading && counts.unread > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                      {counts.unread}
+                      {unreadCount}
                     </span>
                   )}
                 </Link>

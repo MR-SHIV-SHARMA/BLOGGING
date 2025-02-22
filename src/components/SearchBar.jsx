@@ -38,7 +38,6 @@ const SearchBar = () => {
         { query },
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
-          withCredentials: true,
         }
       );
       if (query.trim().startsWith("@")) {

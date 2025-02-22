@@ -1,115 +1,48 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import axios from "axios"; // ✅ Axios Import किया
+import { BrowserRouter } from "react-router-dom";
+import axios from "axios";
 import "./index.css";
 import Cookies from "js-cookie";
 import { AuthProvider } from "./context/AuthContext";
-import { ProtectedRoute } from "./Routes/ProtectedRoute";
-import { PublicRoute } from "./Routes/PublicRoute";
-import { NotificationProvider } from './context/NotificationContext';
+import { NotificationProvider } from "./context/NotificationContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { UserProfileProvider } from "./context/UserProfile";
+import { Toaster } from "react-hot-toast";
+import App from "./App";
 
 // Update axios defaults
 axios.defaults.withCredentials = true;
-// axios.defaults.baseURL = "https://bg-io.vercel.app/api/v1";
-axios.defaults.baseURL = "http://localhost:3000/api/v1";
+axios.defaults.baseURL = "https://bg-io.vercel.app/api/v1";
+// axios.defaults.baseURL = "http://localhost:3000/api/v1";
 
-import Signup from "./components/Signup";
-import Login from "./components/Login";
-import Home from "./components/Home";
-import Footer from "./components/Footer";
-import PostDetail from "./components/Post";
-import Header from "./components/Header";
-import AllPosts from "./components/AllPosts";
-import AddPost from "./components/AddPost";
-import UserProfileCard from "./components/UserProfile";
-import ResetPassword from "./components/ResetPassword";
-import AccountRestoration from "./components/AccountRestoration";
-import PublicUserProfile from "./components/PublicUserProfile";
-import SearchResultsPage from "./components/SearchResultsPage";
-import NotificationDropdown from "./components/NotificationDropdown";
-
-function App() {
-  // Get the current location to conditionally render the footer
-  const location = useLocation();
-
-  return (
-    <AuthProvider>
-      <NotificationProvider>
-        <Header />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-
-          {/* Auth Routes - Redirect to home if logged in */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicRoute>
-                <Signup />
-              </PublicRoute>
-            }
-          />
-
-          {/* Protected Routes - Redirect to login if not authenticated */}
-          <Route
-            path="/add-post"
-            element={
-              <ProtectedRoute>
-                <AddPost />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/user-profile"
-            element={
-              <ProtectedRoute>
-                <UserProfileCard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationDropdown />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/post/:slug" element={<PostDetail />} />
-          <Route path="/all-posts" element={<AllPosts />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/account-restoration" element={<AccountRestoration />} />
-          <Route
-            path="/api/v1/user/profile/view/f/:userId"
-            element={<PublicUserProfile />}
-          />
-          <Route path="/search-results" element={<SearchResultsPage />} />
-        </Routes>
-        {/* Conditionally render the Footer only on pages other than "/notifications" */}
-        {location.pathname !== "/notifications" && <Footer />}
-      </NotificationProvider>
-    </AuthProvider>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <NotificationProvider>
-          <App />
-        </NotificationProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <UserProfileProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <App />
+              <Toaster position="top-right" />
+            </NotificationProvider>
+          </AuthProvider>
+        </UserProfileProvider>
+      </BrowserRouter>
+      <ReactQueryDevtools /> {/* Development में debugging के लिए */}
+    </QueryClientProvider>
   </React.StrictMode>
 );
 
