@@ -16,7 +16,7 @@ function PublicUserProfile() {
 
   useEffect(() => {
     async function fetchUserProfile() {
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       try {
         const response = await axios.get(`/user/profile/view/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -50,7 +50,7 @@ function PublicUserProfile() {
 
   useEffect(() => {
     async function fetchProfile() {
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       if (!token) {
         setError("No access token found. Please log in.");
         setLoading(false);
@@ -79,7 +79,7 @@ function PublicUserProfile() {
     if (!profile?._id) return;
 
     async function fetchPosts() {
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       setPostsLoading(true);
       try {
         const response = await axios.get(
@@ -101,7 +101,7 @@ function PublicUserProfile() {
   }, [profile?._id]);
 
   const updateFollowState = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!profile?._id) return;
 
     try {
@@ -112,7 +112,7 @@ function PublicUserProfile() {
       if (response.data?.data) {
         const followersArray = response.data.data;
         const newCount = followersArray.length;
-        const currentUserId = localStorage.getItem("userId");
+        const currentUserId = Cookies.get("userId");
 
         const isFollowed = followersArray.some((item) => {
           if (typeof item === "string") {
@@ -149,7 +149,7 @@ function PublicUserProfile() {
 
   useEffect(() => {
     if (!profile?._id) return;
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     async function fetchFollowing() {
       try {
         const response = await axios.get(
@@ -173,13 +173,13 @@ function PublicUserProfile() {
   }, [profile?._id]);
 
   const toggleFollow = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!token) {
       setError("Please log in to follow/unfollow users.");
       return;
     }
 
-    const currentUserId = localStorage.getItem("userId");
+    const currentUserId = Cookies.get("userId");
     if (!currentUserId) {
       setError("No user ID found. Please log in.");
       return;

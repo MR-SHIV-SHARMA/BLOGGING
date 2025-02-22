@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaTrash, FaUserCircle } from "react-icons/fa";
 import axios from "axios";
 import { useLocation, Link } from "react-router-dom";
+import Cookies from "js-cookie";
 
 function NotificationDropdown() {
   const [notifications, setNotifications] = useState([]);
@@ -22,34 +23,28 @@ function NotificationDropdown() {
   // Fetch notifications on mount (or when rendered as a page)
   useEffect(() => {
     const fetchNotifications = async () => {
-      const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("accessToken");
+      const userId = Cookies.get("userId");
+      const token = Cookies.get("accessToken");
+
       if (userId && token) {
         try {
           const response = await axios.get(
             `/interactions/notifications/${userId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
-              withCredentials: true,
             }
           );
 
-          let fetchedNotifications = response.data;
-          if (!Array.isArray(fetchedNotifications)) {
-            if (Array.isArray(response.data.data)) {
-              fetchedNotifications = response.data.data;
-            } else if (Array.isArray(response.data.notifications)) {
-              fetchedNotifications = response.data.notifications;
-            } else {
-              fetchedNotifications = [];
-            }
+          if (response.data.success && Array.isArray(response.data.data)) {
+            setNotifications(response.data.data);
+          } else {
+            setNotifications([]);
           }
-          setNotifications(fetchedNotifications);
         } catch (error) {
-          console.error("Failed to fetch notifications", error);
+          setNotifications([]);
         }
       } else {
-        console.error("User ID or Token not found in localStorage");
+        setNotifications([]);
       }
     };
 
@@ -58,7 +53,7 @@ function NotificationDropdown() {
 
   // Mark a single notification as read
   const markNotificationRead = async (notifId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (token) {
       try {
         await axios.patch(
@@ -86,7 +81,7 @@ function NotificationDropdown() {
   const deleteNotification = async (notifId, e) => {
     // Prevent triggering mark-as-read if clicked
     e.stopPropagation();
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (token) {
       try {
         await axios.delete(`/interactions/notifications/${notifId}`, {
@@ -106,8 +101,8 @@ function NotificationDropdown() {
 
   // Mark all notifications as read
   const markAllNotificationsRead = async () => {
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("accessToken");
+    const userId = Cookies.get("userId");
+    const token = Cookies.get("accessToken");
     if (userId && token) {
       try {
         await axios.patch(
@@ -131,8 +126,8 @@ function NotificationDropdown() {
 
   // Delete all notifications
   const deleteAllNotifications = async () => {
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("accessToken");
+    const userId = Cookies.get("userId");
+    const token = Cookies.get("accessToken");
     if (userId && token) {
       try {
         await axios.delete(`/interactions/notifications/all/${userId}`, {
@@ -177,7 +172,7 @@ function NotificationDropdown() {
   // Fetch user avatars for the notifications (if not already present)
   useEffect(() => {
     async function fetchAvatars() {
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       const newUserIds = notifications
         .map((notif) => notif.actionUserId?._id)
         .filter((id) => id && !userAvatars[id]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation, useSearchParams, Link } from "react-router-dom";
+import Cookies from "js-cookie";
 
 function SearchResultsPage() {
   const location = useLocation();
@@ -19,7 +20,7 @@ function SearchResultsPage() {
   // Fetch search results if there's no search data and a query exists
   useEffect(() => {
     if (!searchData && query) {
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       setLoading(true);
       axios
         .post(

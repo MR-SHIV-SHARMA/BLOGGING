@@ -32,31 +32,34 @@ function Login() {
       const response = await axios.post(
         "/auth/auth/login",
         { email, password },
-        { withCredentials: true }
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      const { accessToken, refreshToken, user } = response.data.data;
+      if (
+        response.data?.data?.accessToken &&
+        response.data?.data?.refreshToken
+      ) {
+        const { accessToken, refreshToken } = response.data.data;
+        const userId = response.data.data.user._id;
 
-      const userId = user && user._id ? user._id : null;
-
-      if (accessToken && refreshToken && userId) {
-        // Store tokens in cookies
-        Cookies.set("accessToken", accessToken, { expires: 1, secure: true });
-        Cookies.set("refreshToken", refreshToken, { expires: 7, secure: true });
-
-        // Store tokens and userId in localStorage
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("userId", userId);
+        // Set cookies
+        Cookies.set("accessToken", accessToken);
+        Cookies.set("refreshToken", refreshToken);
+        Cookies.set("userId", userId);
 
         toast.success("Login successful!");
         navigate("/");
-        window.location.reload();
       } else {
-        throw new Error("Tokens or user id not received from API");
+        throw new Error("Token data not received");
       }
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(
+        err.response?.data?.message || "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -65,12 +68,9 @@ function Login() {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        "https://bg-io.vercel.app/api/v1/auth/password/forgot-password",
-        {
-          email: forgotEmail,
-        }
-      );
+      await axios.post("/auth/password/forgot-password", {
+        email: forgotEmail,
+      });
       setMessage("Password reset instructions have been sent to your email.");
     } catch (error) {
       setMessage("An error occurred while sending reset instructions.");

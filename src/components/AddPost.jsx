@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSpinner } from "react-icons/fa"; // For loading spinner
+import Cookies from "js-cookie";
 
 function AddPost() {
   const [title, setTitle] = useState("");
@@ -21,7 +22,7 @@ function AddPost() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
+        const token = Cookies.get("accessToken");
 
         const categoryResponse = await axios.get("/common/categories/manage", {
           headers: { Authorization: `Bearer ${token}` },
@@ -87,7 +88,7 @@ function AddPost() {
     try {
       setLoading(true);
       setMessage("");
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
 
       if (!token) {
         setMessage("Authorization token is missing!");

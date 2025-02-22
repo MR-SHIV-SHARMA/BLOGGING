@@ -26,6 +26,7 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import Cookies from "js-cookie";
 
 function PostDetail() {
   const { slug } = useParams();
@@ -163,7 +164,7 @@ function PostDetail() {
         return;
       }
 
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       try {
         const response = await axios.get("/interactions/bookmarks/", {
           headers: { Authorization: `Bearer ${token}` },
@@ -190,7 +191,7 @@ function PostDetail() {
         return;
       }
 
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       try {
         const response = await axios.get(`/interactions/likes/post/${postId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -214,7 +215,7 @@ function PostDetail() {
     };
 
     const checkIfLiked = async (postId) => {
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       if (!token || !currentUser) return;
 
       try {
@@ -275,7 +276,7 @@ function PostDetail() {
   }, [slug, showComments, currentUser]);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (token) {
       try {
         const decodedToken = JSON.parse(atob(token.split(".")[1]));
@@ -298,7 +299,7 @@ function PostDetail() {
   };
 
   const addPostToBookmark = async (bookmarkId, postId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!bookmarkId || !postId) {
       toast.error("Please select a bookmark and a post.");
       return;
@@ -358,7 +359,7 @@ function PostDetail() {
   };
 
   const likePost = async (postId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!token || !currentUser) {
       toast.error("Please login to like posts");
       return;
@@ -397,7 +398,7 @@ function PostDetail() {
   };
 
   const deleteLike = async (postId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!token || !currentUser) {
       toast.error("Please login to unlike posts");
       return;
@@ -458,7 +459,7 @@ function PostDetail() {
     }
 
     setIsAddingComment(true); // Set loading state
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.post(
         `/content/comments/post/${post._id}`,
@@ -499,7 +500,7 @@ function PostDetail() {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.put(
         `/content/comments/${commentId}`,
@@ -527,7 +528,7 @@ function PostDetail() {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.delete(`/content/comments/${commentId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -558,7 +559,7 @@ function PostDetail() {
 
   // Helper functions for liking and unliking a comment
   const likeComment = async (commentId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!token) {
       toast.error("Please login to like comments");
       return;
@@ -576,7 +577,7 @@ function PostDetail() {
   };
 
   const unlikeComment = async (commentId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!token) {
       toast.error("Please login to unlike comments");
       return;
@@ -723,7 +724,7 @@ function PostDetail() {
   };
 
   const handleReply = async (commentId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.post(
         `/content/comments/${commentId}/replies`,

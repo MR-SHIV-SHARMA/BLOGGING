@@ -19,24 +19,25 @@ function Header() {
   // New state to hold unread notifications count for header
   const [notificationCount, setNotificationCount] = useState(0);
 
-  // Check if the user is logged in by looking for the accessToken in localStorage.
+  // Check if user is logged in by checking cookies
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    setIsLoggedIn(!!token);
+    const accessToken = Cookies.get("accessToken");
+    const refreshToken = Cookies.get("refreshToken");
+    setIsLoggedIn(!!(accessToken && refreshToken));
   }, []);
 
-  // Fetch notifications for logged-in user to update unread count on the bell icon.
+  // Fetch notifications using cookie token
   useEffect(() => {
     const fetchNotifications = async () => {
-      const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("accessToken");
-      if (userId && token) {
+      const accessToken = Cookies.get("accessToken");
+      const userId = Cookies.get("userId");
+
+      if (accessToken && userId) {
         try {
           const response = await axios.get(
             `/interactions/notifications/${userId}`,
             {
-              headers: { Authorization: `Bearer ${token}` },
-              withCredentials: true,
+              headers: { Authorization: `Bearer ${accessToken}` },
             }
           );
           let fetchedNotifications = response.data;
@@ -71,23 +72,24 @@ function Header() {
 
   const logoutHandler = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        console.error("No token found in localStorage");
+      const accessToken = Cookies.get("accessToken");
+      if (!accessToken) {
+        console.error("No access token found in cookies");
         return;
       }
+
       await axios.post(
         "/auth/auth/logout",
         {},
         {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
+          headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      Cookies.remove("accessToken");
-      Cookies.remove("refreshToken");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+
+      // Clear cookies
+      Cookies.remove("accessToken", { path: "/" });
+      Cookies.remove("refreshToken", { path: "/" });
+
       setIsLoggedIn(false);
       navigate("/login");
     } catch (error) {

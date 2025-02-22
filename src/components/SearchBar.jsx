@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import axios from "axios";
 import { FaTrash, FaSearch, FaTimes, FaUserCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 // -----------------------------------------------------
 // SearchBar Component
@@ -30,7 +31,7 @@ const SearchBar = () => {
   // API / Helper Functions
   const performSearch = async (query) => {
     if (!query.trim()) return;
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.post(
         "/common/search/search-history/",
@@ -50,7 +51,7 @@ const SearchBar = () => {
   };
 
   const fetchSearchHistory = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.get("/common/search/search-history/", {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -63,7 +64,7 @@ const SearchBar = () => {
   };
 
   const deleteSearchHistoryEntry = async (id) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       await axios.delete(`/common/search/search-history/${id}`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -80,7 +81,7 @@ const SearchBar = () => {
   };
 
   const clearSearchHistory = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       await axios.delete("/common/search/search-history/clear", {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -156,7 +157,7 @@ const SearchBar = () => {
         return;
       const { searchEntry, results } = searchResults.data;
       if (!searchEntry || !searchEntry.query.startsWith("@")) return;
-      const token = localStorage.getItem("accessToken");
+      const token = Cookies.get("accessToken");
       const newUserIds = results.map((item) => item.userId || item._id);
       const uniqueUserIds = [...new Set(newUserIds)];
       for (let id of uniqueUserIds) {

@@ -12,6 +12,7 @@ import {
   FaCamera,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import Cookies from "js-cookie";
 
 /* ---------------------------- Modal Components ---------------------------- */
 
@@ -201,7 +202,7 @@ function UserProfileCard() {
   const coverImageInputRef = useRef(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
 
     axios
       .get("/user/profile/view", {
@@ -252,8 +253,8 @@ function UserProfileCard() {
 
   useEffect(() => {
     if (!profile?._id) return;
-    const token = localStorage.getItem("accessToken");
-    const userId = localStorage.getItem("userId");
+    const token = Cookies.get("accessToken");
+    const userId = Cookies.get("userId");
 
     async function fetchFollowCounts() {
       try {
@@ -275,7 +276,7 @@ function UserProfileCard() {
   }, [profile?._id]);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     axios
       .post(
         "/user/profile/view/current-user",
@@ -286,7 +287,6 @@ function UserProfileCard() {
       )
       .then((response) => {
         const data = response.data.data;
-        console.log("data", data);
         if (response.data.success) {
           setCurrentUserProfile(data);
         } else {
@@ -295,14 +295,13 @@ function UserProfileCard() {
           );
         }
       })
-      .catch((error) => {
-        console.error("Error fetching current user profile: ", error);
+      .catch(() => {
         toast.error("Error fetching current user profile");
       });
   }, []);
 
   const handleProfileUpdate = () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
 
     const updateData = {
       fullname,
@@ -353,7 +352,7 @@ function UserProfileCard() {
     const formData = new FormData();
     formData.append("avatar", avatarFile);
 
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
 
     await axios
       .patch("/user/profile/media/update-avatar", formData, {
@@ -380,7 +379,7 @@ function UserProfileCard() {
     const formData = new FormData();
     formData.append("coverImage", coverImageFile);
 
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
 
     axios
       .patch("/user/profile/media/update-cover-image", formData, {
@@ -407,7 +406,7 @@ function UserProfileCard() {
 
   useEffect(() => {
     setIsLoadingPosts(true);
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     axios
       .get("/content/posts/user/posts", {
         headers: { Authorization: `Bearer ${token}` },
@@ -432,7 +431,7 @@ function UserProfileCard() {
   }, []);
 
   const createBookmark = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!newBookmarkName) return;
 
     try {
@@ -456,7 +455,7 @@ function UserProfileCard() {
   };
 
   const fetchBookmarks = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.get("/interactions/bookmarks/", {
         headers: { Authorization: `Bearer ${token}` },
@@ -472,7 +471,7 @@ function UserProfileCard() {
   };
 
   const addPostToBookmark = async (bookmarkId, postId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!bookmarkId || !postId) {
       toast.error("Please select a bookmark and a post.");
       return;
@@ -499,7 +498,7 @@ function UserProfileCard() {
   };
 
   const deletePostFromBookmark = async (bookmarkId, postId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.delete(
         `/interactions/bookmarks/${bookmarkId}/posts/${postId}`,
@@ -521,7 +520,7 @@ function UserProfileCard() {
   };
 
   const deleteBookmark = async (bookmarkId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.delete(
         `/interactions/bookmarks/${bookmarkId}`,
@@ -539,7 +538,7 @@ function UserProfileCard() {
   };
 
   const deletePost = async (postId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.delete(`/content/posts/${postId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -550,14 +549,13 @@ function UserProfileCard() {
       } else {
         toast.error(response.data.message || "Failed to delete post");
       }
-    } catch (error) {
-      console.error("Error deleting post:", error);
+    } catch {
       toast.error("Error deleting post");
     }
   };
 
   const fetchUserPosts = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     setIsLoadingPosts(true);
     try {
       const response = await axios.get("/content/posts/user/posts", {
@@ -586,7 +584,7 @@ function UserProfileCard() {
   };
 
   const updatePost = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     const formData = new FormData();
     formData.append("title", editingPost.title);
     formData.append("content", editingPost.content);
@@ -620,7 +618,7 @@ function UserProfileCard() {
   };
 
   const handleChangePassword = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     try {
       const response = await axios.post(
         "/auth/password/change-password",
@@ -642,7 +640,7 @@ function UserProfileCard() {
   };
 
   const handleDeleteAccount = async () => {
-    const token = localStorage.getItem("accessToken");
+    const token = Cookies.get("accessToken");
     if (!token) {
       toast.error("Access token not found.");
       return;
