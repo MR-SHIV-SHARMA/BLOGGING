@@ -16,6 +16,7 @@ import PublicUserProfile from "./components/PublicUserProfile";
 import SearchResultsPage from "./components/SearchResultsPage";
 import { ProtectedRoute } from "./Routes/ProtectedRoute";
 import { PublicRoute } from "./Routes/PublicRoute";
+import HelpCenter from "./components/HelpCenter";
 
 function App() {
   const location = useLocation();
@@ -74,12 +75,16 @@ function App() {
         <Route path="/all-posts" element={<AllPosts />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/account-restoration" element={<AccountRestoration />} />
-        <Route path="/api/v1/user/profile/view/f/:userId" element={<PublicUserProfile />} />
+        <Route
+          path="/api/v1/user/profile/view/f/:userId"
+          element={<PublicUserProfile />}
+        />
         <Route path="/search-results" element={<SearchResultsPage />} />
+        <Route path="/help" element={<HelpCenter />} />
       </Routes>
       {location.pathname !== "/notifications" && <Footer />}
     </>
   );
 }
 
-export default App; 
+export default App;

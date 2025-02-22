@@ -6,40 +6,51 @@ import { FaSpinner } from "react-icons/fa"; // For loading spinner
 
 function AccountRestoration() {
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [loading, setLoading] = useState(false);
 
-  const requestRestoration = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email.");
-      return;
-    }
-    setIsLoading(true);
+    setLoading(true);
+    setStatus({ type: "", message: "" });
+
     try {
-      const response = await axios.post("/user/account/request-restoration", {
-        email,
+      const response = await axios.post(
+        "http://localhost:3000/api/v1/user/account/request-restoration",
+        { email },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setStatus({
+        type: "success",
+        message: "Restoration request submitted successfully. Please check your email for further instructions."
       });
-      if (response.data.success) {
-        toast.success("Account restoration request sent successfully!");
-        setEmail("");
-      } else {
-        toast.error(response.data.message || "Failed to request restoration.");
-      }
+      setEmail("");
     } catch (error) {
-      console.error("Error requesting account restoration:", error);
-      toast.error("An error occurred while requesting account restoration.");
+      setStatus({
+        type: "error",
+        message: error.response?.data?.message || "Failed to submit restoration request. Please try again."
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-purple-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-2xl p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
-          Restore Account
-        </h2>
-        <form onSubmit={requestRestoration} className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-800">Account Restoration</h2>
+          <p className="mt-2 text-gray-600">
+            Submit your email to request account restoration
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="email"
@@ -48,44 +59,49 @@ function AccountRestoration() {
               Email Address
             </label>
             <input
-              type="email"
               id="email"
+              type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter your email"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-              required
-              disabled={isLoading}
             />
           </div>
+
+          {status.message && (
+            <div
+              className={`p-4 rounded-md ${
+                status.type === "success"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : "bg-red-50 text-red-700 border border-red-200"
+              }`}
+            >
+              {status.message}
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={isLoading}
-            className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg font-semibold shadow-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            disabled={loading}
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+              ${loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              }`}
           >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <FaSpinner className="animate-spin h-5 w-5 mr-2" />
-                Sending...
-              </div>
-            ) : (
-              "Request Account Restoration"
-            )}
+            {loading ? "Submitting..." : "Submit Restoration Request"}
           </button>
         </form>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
+
+        <div className="mt-6 text-center">
+          <a
+            href="/help"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Return to Help Center
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -60,9 +60,20 @@ function Login() {
         throw new Error("Token data not received");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Something went wrong. Please try again."
-      );
+      let errorMessage = err.response?.data || err.message;
+      
+      if (errorMessage.includes('<!DOCTYPE html>')) {
+        const match = errorMessage.match(/Error: (.*?)<br>/);
+        if (match && match[1]) {
+          errorMessage = match[1].trim();
+        }
+      }
+
+      if (errorMessage.includes('Account deactivated')) {
+        errorMessage = "Your account has been deactivated. Please contact support to restore your account.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -102,6 +113,13 @@ function Login() {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md mb-4 text-center">
             {error}
+            {error.includes('deactivated') && (
+              <div className="mt-2">
+                <Link to="/help" className="text-blue-600 hover:text-blue-800 underline">
+                  Visit Help Center
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

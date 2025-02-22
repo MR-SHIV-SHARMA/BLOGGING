@@ -142,32 +142,119 @@ function DeleteAccountModal({
   onClose,
   onDeleteAccount,
 }) {
+  const [confirmationStep, setConfirmationStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
+  const handleDelete = async () => {
+    if (confirmationStep < 3) {
+      setConfirmationStep((prev) => prev + 1);
+      return;
+    }
+
+    if (confirmText !== "DELETE") {
+      toast.error("Please type 'DELETE' to confirm");
+      return;
+    }
+
+    setIsLoading(true);
+    await onDeleteAccount();
+    setIsLoading(false);
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
       <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Confirm Account Deletion</h2>
-        <p className="mb-4 text-gray-700">
-          Please enter your email to confirm account deletion:
-        </p>
-        <input
-          type="email"
-          placeholder="Enter your email"
-          value={emailValue}
-          onChange={onEmailChange}
-          className="w-full border rounded px-3 py-2 mb-4 focus:ring-2 focus:ring-blue-500"
-        />
+        <h2 className="text-xl font-bold mb-4 text-red-600">Delete Account</h2>
+
+        {confirmationStep === 1 && (
+          <div className="mb-4">
+            <p className="text-gray-700 mb-4">
+              Are you sure you want to delete your account? This action cannot
+              be undone.
+            </p>
+            <ul className="list-disc ml-4 mb-4 text-gray-600">
+              <li>All your posts will be permanently deleted</li>
+              <li>Your profile information will be removed</li>
+              <li>You will lose access to all your data</li>
+            </ul>
+          </div>
+        )}
+
+        {confirmationStep === 2 && (
+          <div className="mb-4">
+            <p className="text-gray-700 mb-4">
+              Please enter your email to confirm account deletion:
+            </p>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={emailValue}
+              onChange={onEmailChange}
+              className="w-full border rounded px-3 py-2 mb-4 focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+        )}
+
+        {confirmationStep === 3 && (
+          <div className="mb-4">
+            <p className="text-gray-700 mb-4">
+              Final confirmation: Type 'DELETE' to permanently delete your
+              account
+            </p>
+            <input
+              type="text"
+              placeholder="Type 'DELETE'"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              className="w-full border rounded px-3 py-2 mb-4 focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+        )}
+
         <div className="flex justify-end">
           <button
             onClick={onClose}
-            className="mr-4 bg-gray-500 text-white py-1 px-4 rounded hover:bg-gray-600 transition"
+            className="mr-4 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition"
           >
             Cancel
           </button>
           <button
-            onClick={onDeleteAccount}
-            className="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 transition"
+            onClick={handleDelete}
+            disabled={isLoading}
+            className={`bg-red-500 text-white py-2 px-4 rounded transition flex items-center ${
+              isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"
+            }`}
           >
-            Delete Account
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Deleting...
+              </>
+            ) : confirmationStep === 3 ? (
+              "Delete Account"
+            ) : (
+              "Continue"
+            )}
           </button>
         </div>
       </div>
@@ -474,6 +561,8 @@ function UserProfileCard() {
         const data = response.data.data;
         if (response.data.success) {
           setProfile(data);
+          console.log("User email:", data.email);
+          console.log("Full profile data:", data);
         } else {
           toast.error(
             response.data.message || "Failed to fetch current user profile"
@@ -849,29 +938,32 @@ function UserProfileCard() {
       return;
     }
 
-    if (!profile?.email) {
-      toast.error("User email not found");
+    if (!profile?.user?.email) {
+      toast.error("User profile not loaded properly");
       return;
     }
 
-    if (deleteConfirmationEmail.trim() !== profile.email) {
+    const enteredEmail = deleteConfirmationEmail.trim();
+    const profileEmail = profile.user.email;
+
+    if (enteredEmail !== profileEmail) {
       toast.error("Email confirmation does not match");
       return;
     }
 
     try {
       const response = await axios.delete("/user/account/delete-account", {
-        data: { email: profile.email },
+        data: { email: enteredEmail },
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.success) {
         toast.success("Account deleted successfully");
-        // Clear cookies and local storage
-        Cookies.remove("accessToken");
-        Cookies.remove("userId");
-        // Redirect to home page or login page
-        window.location.href = "/login";
+        setTimeout(() => {
+          Cookies.remove("accessToken");
+          Cookies.remove("userId");
+          window.location.href = "/login";
+        }, 1500);
       } else {
         toast.error(response.data.message || "Failed to delete account");
       }
