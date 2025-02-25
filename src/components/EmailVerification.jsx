@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Loader2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 const EmailVerification = () => {
-  const { token } = useParams(); // 🔥 Fix: Get token from path params
+  const { token } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState("checking");
   const [errorMessage, setErrorMessage] = useState("");
@@ -35,7 +36,6 @@ const EmailVerification = () => {
           navigate("/login");
         }, 3000);
       } catch (error) {
-        console.error("Verification error:", error);
         setStatus("error");
         setErrorMessage(
           error.response?.data?.message || "Failed to verify email"
@@ -50,25 +50,43 @@ const EmailVerification = () => {
   }, [token, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-lg shadow-lg text-center">
-        {status === "loading" && (
-          <p className="text-blue-500">Verifying your email...</p>
-        )}
-        {status === "success" && (
-          <p className="text-green-500">✅ Email Verified! Redirecting...</p>
-        )}
-        {status === "alreadyVerified" && (
-          <p className="text-green-500">
-            ✅ Email Already Verified! Redirecting...
-          </p>
-        )}
-        {status === "error" && (
-          <p className="text-red-500">❌ {errorMessage}</p>
-        )}
-        {status === "noToken" && (
-          <p className="text-red-500">⚠️ {errorMessage}</p>
-        )}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 px-6">
+      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-xl text-center">
+        <h2 className="text-2xl font-semibold text-gray-700">
+          Email Verification
+        </h2>
+        <div className="mt-4">
+          {status === "loading" && (
+            <div className="flex flex-col items-center gap-2 text-blue-500">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <p>Verifying your email...</p>
+            </div>
+          )}
+          {status === "success" && (
+            <div className="flex flex-col items-center gap-2 text-green-500">
+              <CheckCircle className="w-8 h-8" />
+              <p>Email Verified! Redirecting...</p>
+            </div>
+          )}
+          {status === "alreadyVerified" && (
+            <div className="flex flex-col items-center gap-2 text-green-500">
+              <CheckCircle className="w-8 h-8" />
+              <p>Email Already Verified! Redirecting...</p>
+            </div>
+          )}
+          {status === "error" && (
+            <div className="flex flex-col items-center gap-2 text-red-500">
+              <XCircle className="w-8 h-8" />
+              <p>{errorMessage}</p>
+            </div>
+          )}
+          {status === "noToken" && (
+            <div className="flex flex-col items-center gap-2 text-yellow-500">
+              <AlertTriangle className="w-8 h-8" />
+              <p>{errorMessage}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
